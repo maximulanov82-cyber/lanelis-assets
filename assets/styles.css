@@ -23,16 +23,25 @@
   src:url("../fonts/inter-cyrillic-ext.woff2") format("woff2");
   unicode-range:U+0460-052F,U+1C80-1C88,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F}
 
-/* токены — из newtab.html, уровень стекла trans */
+/* Токены — из newtab.html.
+
+   Уровень стекла: тот, что у расширения ПО УМОЛЧАНИЮ (.52 / .42 / .72).
+   Раньше сюда были скопированы значения режима «Лёгкие» (.32 / .24 / .50),
+   и сайт спорил сам с собой: шапка, карточки возможностей и карточки цен
+   были прописаны настоящим rgba(23,26,28,.52) вручную, а рельс разделов,
+   список шагов и кнопки брали токен и выходили заметно светлее.
+   Правка 2026-09-07: токены подняты до уровня расширения, а жёстко
+   прописанные значения заменены на var(--s-card) — теперь уровень один
+   и меняется в одном месте. */
 :root{
   --text:#F8FBFF;
   --text-dim:#D4D7DB;
   --text-mute:rgba(212,215,219,.55);
   --canvas:#07080a;
 
-  --s-card:rgba(23,26,28,.32);
-  --s-board:rgba(20,23,27,.24);
-  --s-pop:rgba(24,27,31,.50);
+  --s-card:rgba(23,26,28,.52);
+  --s-board:rgba(20,23,27,.42);
+  --s-pop:rgba(24,27,31,.72);
   --s-card-hi:rgba(255,255,255,.06);
   --outline:rgba(255,255,255,.10);
   --outline-soft:rgba(255,255,255,.06);
@@ -227,7 +236,7 @@ body.pay #bg::after{display:none}
 /* Пока страница не тронута — панель прозрачная, знак лежит на обоях.
    Как только листаем, под неё встаёт стекло: иначе разделы проезжают
    сквозь панель и рейл читается поверх текста. Класс ставит app.js. */
-.top.stuck{background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+.top.stuck{background:var(--s-card);backdrop-filter:var(--blur);
   border-bottom-color:var(--hair)}
 
 /* знак — без подложки: сам логотип лежит на обоях, а не на плашке.
@@ -458,7 +467,7 @@ body.pay #bg::after{display:none}
 .feats{margin-top:clamp(22px,2.6vw,32px);display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .ft{padding:clamp(20px,2.2vw,26px);border-radius:var(--r-lg);
-  background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+  background:var(--s-card);backdrop-filter:var(--blur);
   box-shadow:inset 0 0 0 1px var(--outline-soft);
   transition:transform var(--t-hover) var(--e-move),box-shadow var(--t-sm)}
 .ft:hover{transform:translateY(-2px);
@@ -481,7 +490,7 @@ body.pay #bg::after{display:none}
 .plans3{margin-top:clamp(22px,2.6vw,32px);display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch}
 .pc{position:relative;display:flex;flex-direction:column;padding:clamp(20px,2.2vw,26px);
-  border-radius:var(--r-lg);background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+  border-radius:var(--r-lg);background:var(--s-card);backdrop-filter:var(--blur);
   box-shadow:inset 0 0 0 1px var(--outline-soft);
   transition:transform var(--t-hover) var(--e-move),box-shadow var(--t-sm)}
 .pc:hover{transform:translateY(-2px);
@@ -558,7 +567,7 @@ body.pay #bg::after{display:none}
 .hleft{display:grid;grid-template-rows:1fr 1fr;gap:14px}
 
 .hcard{display:flex;flex-direction:column;padding:clamp(20px,2.2vw,26px);border-radius:var(--r-lg);
-  background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+  background:var(--s-card);backdrop-filter:var(--blur);
   box-shadow:inset 0 0 0 1px var(--outline-soft);
   transition:transform var(--t-hover) var(--e-move),box-shadow var(--t-sm)}
 .hcard:hover{transform:translateY(-2px);
@@ -580,7 +589,7 @@ body.pay #bg::after{display:none}
 .hcard:hover em i{transform:translateX(3px)}
 
 .hdet{position:relative;padding:clamp(22px,2.4vw,30px);border-radius:var(--r-lg);
-  background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+  background:var(--s-card);backdrop-filter:var(--blur);
   box-shadow:inset 0 0 0 1px var(--outline-soft)}
 
 .hdet__h{font-size:var(--fs-label);font-weight:var(--fw-medium);line-height:var(--lh-label);
@@ -969,7 +978,7 @@ h3{font-size:var(--fs-h3);font-weight:var(--fw-semi);letter-spacing:var(--ls-tit
 .coplans{margin-top:var(--sp-5);display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3)}
 .coplan{position:relative;display:flex;flex-direction:column;
   padding:var(--sp-4);border-radius:var(--r-md);text-align:left;
-  background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+  background:var(--s-card);backdrop-filter:var(--blur);
   box-shadow:inset 0 0 0 1px var(--outline-soft);
   transition:box-shadow var(--t-sm),background var(--t-sm)}
 .coplan:hover{box-shadow:inset 0 0 0 1px var(--outline)}
@@ -1015,7 +1024,7 @@ h3{font-size:var(--fs-h3);font-weight:var(--fw-semi);letter-spacing:var(--ls-tit
 /* Материал тот же, что у карточек тарифов и счёта: то же стекло, та же
    грань. Прежний фон был прозрачнее, и плашка выглядела чужой на странице. */
 .cofeat{margin-top:var(--sp-3);padding:var(--sp-5);border-radius:var(--r-md);
-  background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+  background:var(--s-card);backdrop-filter:var(--blur);
   box-shadow:inset 0 0 0 1px var(--outline-soft);
   /* Две колонки — но только пока колонка шире 250: при 576 у левой части
      страницы это ровно два столбца по 258, и каждый пункт умещается в одну
@@ -1070,7 +1079,7 @@ h3{font-size:var(--fs-h3);font-weight:var(--fw-semi);letter-spacing:var(--ls-tit
 /* Счёт. Тот же материал, что карточки тарифов. */
 .co__side{position:sticky;top:88px}
 .cosum{margin-top:var(--sp-3);padding:var(--sp-5);border-radius:var(--r-lg);
-  background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+  background:var(--s-card);backdrop-filter:var(--blur);
   box-shadow:inset 0 0 0 1px var(--outline-soft)}
 .cosum__plan b{font-size:var(--fs-h3);font-weight:var(--fw-semi);
   line-height:var(--lh-title);letter-spacing:var(--ls-title)}
@@ -1128,7 +1137,7 @@ h3{font-size:var(--fs-h3);font-weight:var(--fw-semi);letter-spacing:var(--ls-tit
    ============================================================ */
 .done{margin:clamp(20px,2.4vw,28px) auto 0;max-width:560px;
   padding:var(--sp-6);border-radius:var(--r-lg);
-  background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+  background:var(--s-card);backdrop-filter:var(--blur);
   box-shadow:inset 0 0 0 1px var(--outline-soft)}
 /* Знак и заголовок стоят в строку, а не столбиком: так шапка занимает
    одну высоту вместо трёх и читается как заголовок чека. Знак выровнен
