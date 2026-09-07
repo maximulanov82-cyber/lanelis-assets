@@ -39,6 +39,20 @@
   --text-mute:rgba(212,215,219,.55);
   --canvas:#07080a;
 
+  /* Метка «таблица стилей доехала». Её читает скрипт заставки в разметке:
+     пока значения нет, страница показывает каркас, а если оно так и не
+     появилось за девять секунд — экран «файлы не дошли». Проверять иначе
+     нельзя: таблица стилей лежит на другом адресе, и правила её из кода
+     не прочитать — браузер закрывает их как чужие. */
+  --css-ok:1;
+
+  /* Тревожный цвет. Значение взято из расширения (--danger там же),
+     а не подобрано заново: отказ платежа человек может увидеть и на
+     сайте, и в расширении, и цвет обязан быть один. Тратится редко —
+     только там, где что-то действительно пошло не так; обычные
+     сообщения об ошибке на сайте помечаются акцентом. */
+  --danger:#e5674f;
+
   --s-card:rgba(23,26,28,.52);
   --s-board:rgba(20,23,27,.42);
   --s-pop:rgba(24,27,31,.72);
@@ -741,11 +755,72 @@ body.pay #bg::after{display:none}
    поэтому в <head> стоит noscript-отмена — без скриптов страница
    должна остаться читаемой, а не пустой. app.js показывает сразу то,
    что уже на экране, и вешает наблюдателя на остальное. */
-.rv{opacity:0;transform:translateY(14px);
-  transition:opacity .5s var(--e-enter),transform .5s var(--e-enter)}
-.rv.in{opacity:1;transform:none}
+/* Появление при прокрутке. Прятать содержимое имеет право ТОЛЬКО тот,
+   кто умеет его показать — то есть страница с работающим скриптом.
+   Поэтому скрытие висит на html.js, а метку ставит встроенный скрипт
+   в самой разметке.
+
+   Иначе получалась ловушка: скрипт теперь едет с GitHub Pages, и пока
+   он в пути, заголовок первого экрана, подзаголовок и обе кнопки лежат
+   с нулевой прозрачностью. Стили при этом уже приехали, заставка снята —
+   и человек смотрит на пустой экран. Тот же скрипт снимает метку, если
+   app.js так и не доехал за шесть секунд: тогда всё просто видно сразу,
+   без появления. Появление — украшение, содержимое — нет. */
+/* ── Плашка на месте будущего значения ────────────────────────
+   Ставится там, где значение придёт с сервера с задержкой: на странице
+   после оплаты заказ опрашивается до тридцати секунд. Прочерк на этом
+   месте читается как «пусто», плашка — как «сюда придёт значение».
+
+   Радиус нарочно мельче самого мелкого в шкале: плашка не форма и не
+   поле ввода, её нельзя ни нажать, ни заполнить, и путать её с ними
+   человек не должен. Ширина задаётся в разметке под настоящее значение,
+   чтобы карточка не переставлялась при подстановке.
+
+   Скрипт пишет в эти узлы текстом — плашка исчезает сама, отдельной
+   уборки не требуется. */
+/* ── Платёж отклонён ──────────────────────────────────────────
+   Стоит над формой оплаты, а не вместо неё: повторить попытку человек
+   должен в один шаг, а не через кнопку «попробовать снова».
+
+   Материал — всплывающее стекло (--s-pop), а не карточка: этот блок
+   не часть формы, он поверх разговора. Полоса слева тревожного цвета,
+   как у сообщения об ошибке в поле, — но шире, потому что и весит
+   больше. Значка тревоги в кружке нет: в наборе расширения такого
+   нет вовсе, а карта с крестом говорит ровно то, что случилось. */
+.cofail{display:flex;gap:var(--sp-4);align-items:flex-start;
+  margin-top:var(--sp-6);padding:var(--sp-4) var(--sp-5);
+  border-radius:var(--r-md);background:var(--s-pop);
+  backdrop-filter:var(--blur);
+  box-shadow:inset 3px 0 0 var(--danger)}
+.cofail__i{flex:none;width:40px;height:40px;border-radius:var(--r-sm);
+  display:grid;place-items:center;color:var(--danger);
+  background:color-mix(in srgb,var(--danger) 13%,transparent)}
+.cofail__i svg{width:22px;height:22px}
+.cofail__h{margin:0;font-size:var(--fs-h3);font-weight:var(--fw-semi);
+  line-height:var(--lh-h);letter-spacing:var(--ls-h)}
+.cofail__t{margin:var(--sp-1) 0 0;font-size:var(--fs-body);
+  line-height:var(--lh-body);color:var(--text-dim);text-wrap:pretty}
+/* Номер заказа приходит из адреса и появляется отдельной строкой —
+   в разметке его нет, потому что без номера строка не нужна. */
+.cofail__t span{display:block;margin-top:var(--sp-2);
+  font-size:var(--fs-meta);color:var(--text-mute)}
+.cofail__t span:empty{display:none}
+
+.skl{display:inline-block;height:1em;vertical-align:-.14em;border-radius:5px;
+  background:linear-gradient(90deg,
+    var(--outline-soft) 0%, var(--outline) 45%, var(--outline-soft) 90%);
+  background-size:220% 100%;animation:skl 1.5s ease-in-out infinite}
+@keyframes skl{from{background-position:140% 0}to{background-position:-40% 0}}
+/* Движение выключено — плашка остаётся ровной: она всё ещё говорит
+   «здесь будет значение», просто молча. */
 @media (prefers-reduced-motion:reduce){
-  .rv{opacity:1;transform:none;transition:none}
+  .skl{animation:none;background:var(--outline-soft)}}
+
+.rv{transition:opacity .5s var(--e-enter),transform .5s var(--e-enter)}
+html.js .rv{opacity:0;transform:translateY(14px)}
+html.js .rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  html.js .rv{opacity:1;transform:none;transition:none}
 }
 
 /* Заголовок раздела: по центру, как весь ритм страницы. Глобальный h2
@@ -759,6 +834,33 @@ body.pay #bg::after{display:none}
 
 /* кнопки */
 .row{display:flex;flex-wrap:wrap;gap:var(--sp-3);margin-top:var(--sp-6);align-items:center}
+/* ── Кнопка в работе ───────────────────────────────────────────
+   Пока идёт запрос, кнопка не просто гаснет: на медленной сети
+   погасшая кнопка неотличима от зависшей страницы, и человек жмёт
+   ещё раз или уходит. Признак работы — полоса по нижнему краю самой
+   кнопки, бегущая слева направо.
+
+   Почему не кольцо: круглых форм в системе нет, только скруглённые
+   прямоугольники. И в расширении ожидание показано так же — сам
+   элемент меняется (favpulse у иконок), а не появляется вертушка рядом.
+
+   Цвет берётся у надписи через currentColor, поэтому полоса одинаково
+   верна и на акцентной кнопке (тёмное по янтарю), и на призрачной.
+   Ставится по метке aria-busy, а не по классу: одна метка сразу и
+   рисует полосу, и объявляет читалке экрана, что кнопка занята. */
+.btn[aria-busy="true"]{position:relative;overflow:hidden}
+.btn[aria-busy="true"]::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
+  border-radius:2px;opacity:.7;
+  background:linear-gradient(90deg,transparent,currentColor,transparent);
+  animation:btn-lane 1.25s var(--e-move) infinite}
+@keyframes btn-lane{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+/* Движение выключено — полоса остаётся ровной подсветкой: признак
+   работы должен сохраниться, просто перестать бегать. */
+@media (prefers-reduced-motion:reduce){
+  .btn[aria-busy="true"]::after{animation:none;opacity:.35;
+    background:currentColor}}
+
 .btn{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 20px;
   border-radius:var(--r-btn);font-size:var(--fs-ui);font-weight:var(--fw-semi);
   line-height:1;white-space:nowrap;
@@ -787,6 +889,30 @@ body.pay #bg::after{display:none}
 .page > .lead{text-align:center;margin-left:auto;margin-right:auto}
 .page__h{margin-top:var(--sp-3)}
 .page .hwrap{margin-top:clamp(24px,3vw,38px)}
+
+/* ── Страница не найдена ───────────────────────────────────────
+   Единственная страница сайта, где содержимое прижато влево.
+   Причина не в прихоти: по центру крупная цифра и заголовок
+   становятся двумя претендентами на роль первого, взгляд мечется
+   между ними. Слева читается сверху вниз: число, заголовок,
+   объяснение, выход.
+
+   Цифра набрана самым тонким начертанием шкалы (--fw-display) и
+   стоит ПЕРЕД заголовком, а не вместо него: читать человек должен
+   «Страница не найдена», число здесь — метка, а не сообщение.
+   Поэтому же оно скрыто от чтения с экрана (aria-hidden в разметке):
+   вслух «четыре ноль четыре» не говорит ничего.
+   Акцентом выделен только ноль — один акцент на экран. */
+.page--404{max-width:56ch}
+.page--404 > .kicker,
+.page--404 > .page__h,
+.page--404 > .lead{text-align:left;margin-left:0;margin-right:0}
+.e404{
+  margin:0;font-size:clamp(76px,13vw,148px);font-weight:var(--fw-display);
+  line-height:.88;letter-spacing:-.05em;color:var(--text);
+}
+.e404 em{font-style:normal;color:var(--accent)}
+.page--404 .row{margin-top:var(--sp-8)}
 
 .kicker{display:block;font-size:var(--fs-label);font-weight:var(--fw-medium);
   line-height:var(--lh-label);letter-spacing:var(--ls-label);
