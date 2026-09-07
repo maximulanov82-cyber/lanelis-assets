@@ -11,7 +11,10 @@
      Прямая ссылка на раздел по-прежнему работает — придя по ней, мы
      прокручиваем куда надо и убираем #раздел из адреса. */
   var spaces = [].slice.call(document.querySelectorAll('.space'));
-  var tabs = [].slice.call(document.querySelectorAll('.sp-tab'));
+  /* Не только вкладки рейла: те же data-sp носят строки телефонного
+     меню, и подсветку текущего раздела получают оба списка одним
+     правилом. Второй навигации нет — есть второй вид одной и той же. */
+  var tabs = [].slice.call(document.querySelectorAll('[data-sp]'));
   var panel = document.querySelector('.top');
 
   function panelH() { return panel ? panel.getBoundingClientRect().height : 0; }
@@ -114,6 +117,73 @@
     window.addEventListener('scroll', glass, { passive: true });
     window.addEventListener('load', pinTop);
     pinTop();
+  }
+
+  /* ---------- Телефон: меню разделов ----------
+     Рейл на узком экране убран, и гамбургер — единственный вход
+     в навигацию. Строки меню ведут туда же, куда вкладки рейла:
+     общий обработчик ссылок с решёткой ловит их сам, потому что
+     класса sp-tab у них нет и условие пропуска не срабатывает.
+     Дублировать прокрутку не нужно.
+
+     Меню закрываем ДО прокрутки: иначе страница едет под закрытой
+     шторкой и человек не видит, куда его перенесло. */
+  var navBtn = document.getElementById('navBtn');
+  var navSheet = document.getElementById('navSheet');
+  if (navBtn && navSheet) {
+    var откудаПришли = null;
+
+    var закрыть = function (вернутьФокус) {
+      if (navSheet.hidden) return;
+      navSheet.hidden = true;
+      navBtn.setAttribute('aria-expanded', 'false');
+      document.documentElement.classList.remove('navlock');
+      if (вернутьФокус !== false && откудаПришли) откудаПришли.focus();
+      откудаПришли = null;
+    };
+
+    var открыть = function () {
+      откудаПришли = document.activeElement;
+      navSheet.hidden = false;
+      navBtn.setAttribute('aria-expanded', 'true');
+      document.documentElement.classList.add('navlock');
+      navSheet.scrollTop = 0;
+      var первая = navSheet.querySelector('.navsheet__row.on')
+                || navSheet.querySelector('.navsheet__row');
+      if (первая) первая.focus();
+    };
+
+    navBtn.addEventListener('click', function () {
+      if (navSheet.hidden) открыть(); else закрыть();
+    });
+
+    navSheet.addEventListener('click', function (e) {
+      if (e.target.closest('[data-nav-close]')) { закрыть(); return; }
+      /* Нажали раздел — закрываем без возврата фокуса: человек уезжает
+         к разделу, и возвращать курсор на гамбургер незачем. */
+      if (e.target.closest('.navsheet__row')) закрыть(false);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !navSheet.hidden) { e.preventDefault(); закрыть(); }
+    });
+
+    /* Пока меню открыто, Tab ходит только по нему. */
+    navSheet.addEventListener('keydown', function (e) {
+      if (e.key !== 'Tab') return;
+      var ф = navSheet.querySelectorAll('a[href],button:not([disabled])');
+      if (!ф.length) return;
+      var первый = ф[0], последний = ф[ф.length - 1];
+      if (e.shiftKey && document.activeElement === первый) { e.preventDefault(); последний.focus(); }
+      else if (!e.shiftKey && document.activeElement === последний) { e.preventDefault(); первый.focus(); }
+    });
+
+    /* Стало широко — меню больше не к месту: закрываем, иначе страница
+       осталась бы под замком прокрутки с невидимой шторкой поверх. */
+    var широко = window.matchMedia('(min-width:821px)');
+    var приШирине = function (m) { if (m.matches) закрыть(false); };
+    if (широко.addEventListener) широко.addEventListener('change', приШирине);
+    else if (широко.addListener) широко.addListener(приШирине);
   }
 
   /* ---------- Дата по-русски ----------
