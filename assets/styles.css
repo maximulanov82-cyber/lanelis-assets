@@ -1,0 +1,1259 @@
+/* ============================================================
+   Lanelis — сайт. Собран как САМО РАСШИРЕНИЕ.
+
+   Главная = экран новой вкладки: сверху рейл пространств (это
+   разделы сайта), ниже доски с карточками (это ссылки и факты).
+   Все размеры, цвета и состояния перенесены из newtab.html
+   один в один — сайт и продукт выглядят одним изделием.
+
+   Работает ТОЛЬКО навигация: переключение пространств и переходы
+   по ссылкам. Ничего не изображаем работающим, если оно не работает.
+
+   Длинные тексты (юр-страницы, гайды, помощь) — отдельные
+   страницы в том же стекле.
+   ============================================================ */
+
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;
+  src:url("../fonts/inter-latin.woff2") format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;
+  src:url("../fonts/inter-cyrillic.woff2") format("woff2");
+  unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;
+  src:url("../fonts/inter-cyrillic-ext.woff2") format("woff2");
+  unicode-range:U+0460-052F,U+1C80-1C88,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F}
+
+/* токены — из newtab.html, уровень стекла trans */
+:root{
+  --text:#F8FBFF;
+  --text-dim:#D4D7DB;
+  --text-mute:rgba(212,215,219,.55);
+  --canvas:#07080a;
+
+  --s-card:rgba(23,26,28,.32);
+  --s-board:rgba(20,23,27,.24);
+  --s-pop:rgba(24,27,31,.50);
+  --s-card-hi:rgba(255,255,255,.06);
+  --outline:rgba(255,255,255,.10);
+  --outline-soft:rgba(255,255,255,.06);
+  --hair:rgba(255,255,255,.07);
+  --blur:blur(22px) saturate(1.15);
+  --shadow:0 18px 50px -20px rgba(0,0,0,.65);
+
+  --accent:#ECB246;
+  --accent-ink:#241a06;
+  --sel:rgba(255,255,255,.17);
+  --sel-h:rgba(255,255,255,.08);
+  /* Материал всплывающих окон — тот же, что у окна настроек и всплывающей
+     корзинки в расширении: почти сплошной, но со стеклом под ним. Имя тоже
+     оттуда, чтобы одно и то же место называлось одним словом в двух местах. */
+  --s-win:rgba(24,27,31,.98);
+  --shadow-pop:0 30px 80px -24px rgba(0,0,0,.75);   /* = --glass-sh расширения */
+
+  --r-lg:20px; --r-md:14px; --r-sm:10px; --r-btn:11px;
+  --e-move:cubic-bezier(.2,0,0,1);
+  --e-enter:cubic-bezier(0,0,0,1);
+  --t-hover:.10s; --t-sm:.16s; --t-md:.24s;
+
+  --wrap:1272px;          /* как максимум доски в расширении: 5 колонок по 240 */
+  --pad:clamp(16px,4vw,40px);
+
+  /* ══════════════════ ТИПОГРАФИКА ══════════════════
+     Одна шкала на весь сайт. Опорные значения взяты из расширения
+     (вкладка 13/500, надзаголовок 11.5 прописными, кнопка 14) — сайт
+     и продукт остаются одним изделием, а разнобой подтянут к ним.
+     Правило: вид определяет РОЛЬ, а не место. Одинаковая роль —
+     одинаковый размер, вес, межстрочный и разрядка на всех страницах.
+     Размеры без clamp намеренно: мелкий интерфейсный текст не должен
+     плавать от ширины окна, иначе теряется опора для глаза. */
+  --fs-display:clamp(34px,4.4vw,52px);   /* герой, один на весь сайт */
+  --fs-h1:clamp(27px,3.1vw,38px);        /* заголовок отдельной страницы */
+  --fs-h2:clamp(23px,2.4vw,30px);        /* заголовок раздела */
+  --fs-h3:17px;                          /* заголовок карточки */
+  --fs-h4:14px;                          /* заголовок внутри карточки */
+  --fs-price:clamp(30px,3.4vw,42px);     /* сумма тарифа */
+  --fs-lead:clamp(15px,1.15vw,16.5px);   /* подзаголовок под заголовком */
+  --fs-body:15px;                        /* основной текст, вопросы */
+  --fs-ui:14px;                          /* кнопки, поля, подписи полей */
+  --fs-meta:13px;                        /* вкладки, ссылки подвала, метки */
+  --fs-caption:12.5px;                   /* сноски, служебные пометки */
+  --fs-label:11.5px;                     /* надзаголовки прописными */
+  --fs-brand:clamp(17px,1.7vw,21px);     /* имя над заголовком героя */
+
+  --fw-regular:400;
+  --fw-medium:500;                       /* органы управления и подписи */
+  --fw-semi:600;                         /* заголовки и акценты */
+  --fw-display:300;                      /* только герой: тонкое крупное */
+
+  --lh-display:1.06;                     /* крупное — плотнее */
+  --lh-head:1.14;
+  --lh-title:1.35;
+  --lh-body:1.65;                        /* читаемый текст — свободнее */
+  --lh-ui:1.45;                          /* мелкий интерфейс — компактно, но не тесно */
+  --lh-label:1.2;
+
+  --ls-display:-.03em;                   /* крупное стягиваем */
+  --ls-head:-.022em;
+  --ls-title:-.012em;
+  --ls-label:.12em;                      /* прописные — разрядка обязательна */
+
+  /* Вертикальный ритм текста. Связанное — ближе, разное — дальше. */
+  --sp-1:4px;  --sp-2:8px;   --sp-3:12px; --sp-4:16px;
+  --sp-5:20px; --sp-6:24px;  --sp-8:32px; --sp-10:40px;
+}
+
+*{box-sizing:border-box}
+/* Скрытое обязано быть скрытым. Любой display у класса сильнее
+   браузерного правила для [hidden], и спрятанный блок оставался
+   на экране — на этом уже обожглись. */
+[hidden]{display:none !important}
+/* Плавность прокрутки НЕ отдаём стилям: с scroll-behavior:smooth браузер
+   при обновлении страницы не возвращает человека на место мгновенно,
+   а демонстративно доезжает туда анимацией. Плавно прокручиваем только
+   там, где это осознанный переход — вкладка рейла и ссылки-якоря
+   (behavior:'smooth' вызовом из app.js). */
+body{margin:0;background:var(--canvas);color:var(--text);
+  font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:var(--fs-body);font-weight:var(--fw-regular);line-height:var(--lh-body);
+  -webkit-font-smoothing:antialiased}
+/* Поля и кнопки шрифт не наследуют — возвращаем им общий. */
+input,textarea,select,button{font-family:inherit}
+/* overflow-x:hidden у body УБРАН намеренно: он делал тело собственным
+   контейнером прокрутки, и липкая панель цеплялась к нему, а не к окну —
+   при листании она уезжала вместе со страницей. Если что-то начнёт
+   вылезать вбок, прячем это на самом виновнике, а не на всём документе. */
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+h1,h2,h3,p,ul,ol,figure,blockquote{margin:0}
+ul,ol{padding:0;list-style:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+/* ============================================================
+   ПОЛОСА ПРОКРУТКИ СТРАНИЦЫ — своих цветов НЕ навязываем.
+   Проверено опытом: фон страницы под полосу Chrome не пускает,
+   поэтому «положить её на обои» нельзя — любая наша раскраска
+   осталась бы тёмной вставкой сбоку и у того, у кого система
+   стоит в светлой теме. Отдаём полосу браузеру: color-scheme
+   говорит ему, что страница поддерживает обе темы, и он рисует
+   полосу по настройке пользователя, а не по нашей.
+   Полоса при этом всегда на месте — overflow-y:scroll держит её
+   и заодно не даёт странице прыгать вбок при переходах.
+   ============================================================ */
+html{color-scheme:light dark;overflow-y:scroll}
+
+#bg{position:fixed;inset:0;z-index:-2;
+  background:url("bg.jpg?v=3c1ac725") center/cover no-repeat fixed var(--canvas)}
+#bg::after{content:"";position:absolute;inset:0;background:rgba(6,8,11,.38)}
+
+/* Фон страниц оплаты: обоев нет — тёмная плоскость и живой свет.
+   Устройство как в интерфейсе PlayStation: не градиент, растянутый по всему
+   экрану, а несколько крупных светящихся пятен, размытых так сильно, что
+   краёв не видно. Разница на глаз заметная: градиент читается как заливка,
+   пятна — как свет, падающий на плоскость.
+
+   Три источника, каждый на своём месте: тёплый сверху по центру освещает
+   знак и заголовок, второй тёплый уходит в правый верхний угол и даёт объём,
+   холодный снизу слева перекликается с зеленью обоев на остальном сайте.
+
+   Пятна вынесены отдельными узлами, а не сделаны псевдоэлементами: размытие
+   каждого своё, и по два на элемент не поместилось бы. */
+body.pay #bg{background:var(--canvas);overflow:hidden}
+/* затемняющая вуаль нужна поверх фотографии; поверх ровного фона она гасила бы свет */
+body.pay #bg::after{display:none}
+
+.glow{position:absolute;display:block;border-radius:50%;pointer-events:none}
+.glow--1{width:min(1100px,120vw);height:520px;left:50%;top:-260px;transform:translateX(-50%);
+  background:radial-gradient(closest-side,rgba(236,178,70,.50),rgba(236,178,70,0));
+  filter:blur(90px)}
+.glow--2{width:min(760px,86vw);height:620px;right:-180px;top:-200px;
+  background:radial-gradient(closest-side,rgba(236,178,70,.34),rgba(236,178,70,0));
+  filter:blur(100px)}
+.glow--3{width:min(900px,96vw);height:700px;left:-260px;bottom:-320px;
+  background:radial-gradient(closest-side,rgba(122,186,142,.30),rgba(122,186,142,0));
+  filter:blur(110px)}
+/* На узком экране пятна съезжают за край и оставляют половину страницы
+   тёмной — там свет собирается к центру. */
+@media (max-width:700px){
+  .glow--2{right:-260px}
+  .glow--3{left:-320px}
+}
+
+/* ============================================================
+   ВЕРХНЯЯ ПАНЕЛЬ — .top расширения: flex, gap 14, padding 16
+   ============================================================ */
+/* Знак, рейл и управление — одна группа по центру окна, а не разнесённые
+   по краям блоки. Промежутки между тремя частями задаёт gap, поэтому они
+   РАВНЫ по построению и не разъезжаются при смене ширины. Когда места
+   перестаёт хватать, сжимается только рейл — у него min-width:0 и своя
+   прокрутка, знак и кнопки не деформируются и ни на что не наезжают.
+   Сетку здесь ставить нельзя: колонка auto держится за содержимое
+   и на узком экране выталкивает страницу вбок. */
+.top{position:sticky;top:0;z-index:60;display:flex;align-items:center;
+  --top-gap:clamp(18px,2.6vw,44px);
+  justify-content:center;gap:var(--top-gap);
+  padding:16px var(--pad);transition:background var(--t-sm),border-color var(--t-sm);
+  border-bottom:1px solid transparent}
+.top__left{flex:0 0 auto;display:flex;align-items:center;gap:14px}
+.top > .btn{flex:none}
+
+/* ЯЗЫК В УГЛУ. Прежде кнопка стояла в связке с рейлом, и правый просвет
+   у рейла выходил втрое шире левого: между рейлом и кнопкой установки
+   помещались и язык, и два шага. Теперь в ряду три вещи с одним шагом,
+   а язык уехал в угол — как на страницах оплаты.
+   Меню раскрывается влево от кнопки: по центру оно ушло бы за край экрана. */
+.top__lang .langmenu{left:auto;right:0;transform:none;
+  animation:langmenu-right-in .13s var(--e-enter)}
+/* Пока места хватает, кнопка выходит из ряда в сам угол панели. Ниже этой
+   ширины ряд занимает панель целиком, и вынутая из потока кнопка наехала бы
+   на «Установить», поэтому там она остаётся последней в ряду — а ряд
+   в этот момент и так упирается в края, то есть кнопка всё равно в углу.
+   Порог посчитан, а не подобран: ряд без языка ≈ 968 + отступы 80 = 1048,
+   плюс место под саму кнопку с двух сторон, чтобы она не прижималась.
+   ⚠️ Селектор из ДВУХ классов намеренно: правило .langwrap{position:relative}
+   лежит в файле ниже и при равном весе перебивало бы absolute, а смещения
+   top/right применялись бы всё равно — кнопка уезжала влево и вниз.
+   Поймано замером, а не на глаз. */
+@media (min-width:1180px){
+  .top .top__lang{position:absolute;top:50%;right:var(--pad);transform:translateY(-50%)}
+}
+/* Пока кнопка ещё в ряду, она стоит к «Установить» ближе, чем части ряда
+   друг к другу, — ровно те 12 px, что раньше отделяли её от рейла. Не ради
+   красоты: в этой полосе ширин ряд занимает панель целиком, и каждый
+   лишний пиксель просвета отрезается от рейла, у которого прячется хвост
+   «Часто задаваемые вопросы». Полный шаг стоил бы рейлу 15 px. */
+@media (max-width:1179.98px){
+  .top .top__lang{margin-left:calc(12px - var(--top-gap))}
+}
+/* Пока страница не тронута — панель прозрачная, знак лежит на обоях.
+   Как только листаем, под неё встаёт стекло: иначе разделы проезжают
+   сквозь панель и рейл читается поверх текста. Класс ставит app.js. */
+.top.stuck{background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+  border-bottom-color:var(--hair)}
+
+/* знак — без подложки: сам логотип лежит на обоях, а не на плашке.
+   Плашки в панели носят только органы управления (рейл, язык, кнопки),
+   поэтому знак читается как знак, а не как ещё одна кнопка. */
+.brandbtn{display:inline-flex;align-items:center;gap:11px;flex:none;height:42px;padding:0 2px;
+  font-size:var(--fs-h3);font-weight:var(--fw-semi);line-height:var(--lh-title);
+  letter-spacing:var(--ls-title);color:var(--text);transition:opacity var(--t-sm)}
+/* Размер знака и слова выставлен по замеру сайта конкурента при ширине 1280:
+   у них слово 20/700 при высоте логотипа 26, у нас было 17/600 — заметно мельче.
+   Отдельным правилом, чтобы не переписывать блок выше и было видно, что менялось. */
+/* Название набрано прописными с широкой разрядкой — по образцу, который
+   прислал владелец. Кегль снижен с 20 до 16: прописные оптически крупнее
+   строчных, и на 20 слово перевешивало бы знак.
+
+   РАВНЫЕ ПРОСВЕТЫ. Рейл и кнопка — плашки: у них видимый край совпадает
+   с краем коробки. У слова края нет, и до края коробки после последней
+   буквы копилась пустота: разрядка .20em добавляется ПОСЛЕ последней
+   буквы, к ней прибавлялся padding-right той же величины (он её не
+   убирал, а удваивал) и ещё 2 от самой кнопки. Замер при 1600: просвет
+   знак→рейл 49,6, рейл→кнопка 41,2 — те самые 8,4 пустоты.
+   Снимаем всё три: разрядку последней буквы гасим отрицательным полем,
+   правые отступы обнуляем. Тогда коробка кончается на самой букве и оба
+   просвета равны зазору ряда по построению, а не на глаз. */
+.brandbtn{height:48px;gap:14px;font-size:16px;font-weight:400;padding-right:0}
+.brandbtn span{text-transform:uppercase;letter-spacing:.20em;padding-right:0;margin-right:-.20em}
+.brandbtn:hover{opacity:.78}
+.brandbtn i{display:block;flex:none;font-style:normal}
+/* Знак вместо прежней янтарной плашки. Соотношение 0,836 взято из самой
+   картинки, поэтому знак не сплющивается. Файл обрезан по краям знака:
+   в исходном кадре он занимал девятую часть площади. */
+.brandbtn i b{display:block;width:34px;height:33px;
+  background:url("znak.png?v=2155e470") center/contain no-repeat}
+
+/* РЕЙЛ ПРОСТРАНСТВ = разделы сайта. Значения из .sp-rail/.sp-tab расширения:
+   плашка pad 4 / радиус 12 / --s-board; вкладка 30px, padding 0 12, радиус 8;
+   активная — --sel + тень; ужимается и прокручивается внутри себя. */
+.sp-rail{flex:0 1 auto;min-width:0;display:flex;align-items:center;gap:4px;padding:4px;
+  border-radius:12px;background:var(--s-board);border:1px solid var(--outline-soft);
+  backdrop-filter:var(--blur);overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.sp-rail::-webkit-scrollbar{display:none}
+.sp-strip{display:inline-flex;gap:4px;width:max-content}
+.sp-tab{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:8px;
+  font-size:var(--fs-meta);font-weight:var(--fw-medium);line-height:var(--lh-ui);
+  white-space:nowrap;color:var(--text-dim);
+  transition:background var(--t-sm),color var(--t-sm)}
+.sp-tab:not(.on):hover{background:var(--sel-h);color:var(--text)}
+.sp-tab.on{background:var(--sel);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.18)}
+.sp-tab .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
+.sp-tab:focus-visible{outline:none;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 70%,transparent)}
+
+/* Установка стоит в панели БЕЗ плашки — обычной кнопкой сайта
+   (.btn .btn-main): плашки носят органы навигации, а это главное
+   действие. «Войти» убрано по решению владельца 2026-08-13,
+   плашка .navtabs вместе с ним стала не нужна.
+   Рост В ПАНЕЛИ — 40, а не общесайтовые 44: рядом стоят рейл
+   (вкладка 30 + отступы 4/4 + грань = 40) и кнопка языка 40×40,
+   и на 44 кнопка выпирала над ними. Скругление тоже 10 — как
+   у соседней кнопки языка, иначе на одной высоте разница видна.
+   На остальных страницах кнопка остаётся 44: там она одна и главная. */
+.top .btn{height:40px;border-radius:10px}
+
+
+/* ЯЗЫК — квадратная кнопка .iconbtn расширения (40×40, радиус 10,
+   --s-card, грань --outline-soft, блюр; наведение приподнимает и
+   заливает --sel-h). Меню раскрывается вниз, строки — .langrow
+   из настроек расширения, недоступные языки помечены «Позже». */
+.langwrap{position:relative;flex:none}
+.iconbtn{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:10px;
+  color:var(--text-dim);background:var(--s-card);border:1px solid var(--outline-soft);
+  backdrop-filter:var(--blur);
+  transition:transform var(--t-hover) var(--e-move),color var(--t-sm),box-shadow var(--t-sm)}
+.iconbtn:hover{transform:translateY(-1px);color:var(--text);box-shadow:inset 0 0 0 999px var(--sel-h)}
+.iconbtn svg{width:18px;height:18px}
+.iconbtn[aria-expanded="true"]{color:var(--text);box-shadow:inset 0 0 0 999px var(--sel-h)}
+
+/* выпадашка — грамматика .engmenu расширения (выбор поисковика):
+   материал --s-win, padding 6, радиус 14, строки внутри с отступом
+   и своим радиусом 9, БЕЗ разделительных полос.
+   Раскрывается по центру под кнопкой. */
+/* Ширина посчитана, а не подобрана: самая длинная строка — подпись
+   «Automatic · Язык браузера», 164; плюс поля строки 20, поля меню 12,
+   полоса прокрутки 10 и грань 2 — 208 в обрез. 220 оставляет двенадцать
+   запаса, чтобы текст не упирался в полосу. */
+.langmenu{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);
+  z-index:80;width:220px;padding:6px;border-radius:14px;
+  background:var(--s-win);border:1px solid var(--outline-soft);
+  backdrop-filter:var(--blur);box-shadow:var(--shadow-pop);
+  max-height:min(60vh,420px);display:flex;flex-direction:column;overflow:hidden;
+  animation:langmenu-in .13s var(--e-enter)}
+.langmenu[hidden]{display:none}
+
+/* полоса прокрутки — тонкий скруглённый бегунок из расширения:
+   7px дорожка, бегунок --outline с прозрачной каймой 2px, радиус 3,
+   без стрелок и без подсветки при наведении. overflow-y:scroll (а не
+   auto) — чтобы полоса не таяла.
+   ВАЖНО: scrollbar-width / scrollbar-color здесь НЕ задаём. Как только
+   любое из них указано, Chromium рисует системную полосу и полностью
+   игнорирует ::-webkit-scrollbar-* — вместе с запретом стрелок. */
+/* Прокручивается СПИСОК, а не всё меню: шапка стоит над ним неподвижно,
+   как в окнах расширения. Поэтому подложка шапке больше не нужна. */
+.langmenu__list{flex:1;min-height:0;overflow-y:scroll;overscroll-behavior:contain;
+  scrollbar-gutter:stable}
+.langmenu__list::-webkit-scrollbar{width:10px}
+/* дорожка отступает от концов на радиус окна — бегунок не заезжает в углы */
+.langmenu__list::-webkit-scrollbar-track{background:transparent;margin:6px 0}
+.langmenu__list::-webkit-scrollbar-thumb{background:var(--outline);border-radius:99px;
+  border:2px solid transparent;background-clip:padding-box;min-height:40px}
+.langmenu__list::-webkit-scrollbar-button{display:none;width:0;height:0}
+.langmenu__list::-webkit-scrollbar-corner{background:transparent}
+@keyframes langmenu-in{
+  from{opacity:0;transform:translateX(-50%) translateY(-4px) scale(.98)}
+  to{opacity:1;transform:translateX(-50%)}
+}
+.langmenu__h{flex:none;margin:0 0 4px;padding:8px 10px 6px;
+  font-size:var(--fs-label);font-weight:var(--fw-medium);line-height:var(--lh-label);
+  letter-spacing:var(--ls-label);text-transform:uppercase;color:var(--text-mute)}
+
+.langrow{display:flex;align-items:center;gap:11px;width:100%;padding:9px 10px;border-radius:9px;
+  text-align:left;cursor:pointer;color:var(--text-dim);
+  font-size:var(--fs-meta);font-weight:var(--fw-medium);line-height:var(--lh-ui);
+  transition:background var(--t-hover),color var(--t-hover)}
+.langrow:hover{background:var(--s-card-hi);color:var(--text)}
+.langrow .ln{font-size:var(--fs-meta);font-weight:var(--fw-medium)}
+.langrow .le{font-size:var(--fs-caption);color:var(--text-mute);margin-top:1px}
+/* Выбранный — подложкой из акцента, ровно как в разделе «Язык» настроек
+   расширения: те же 13 %. Галочки нет ни здесь, ни там. */
+.langrow.sel{background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--text)}
+.langrow.sel:hover{background:color-mix(in srgb,var(--accent) 18%,transparent)}
+/* Недоступный язык — просто приглушён. Плашки «Позже» больше нет: два
+   десятка одинаковых плашек в одном списке перестают что-либо значить. */
+.langrow.soon{opacity:.42;cursor:default}
+.langrow.soon:hover{background:transparent;color:var(--text-dim)}
+
+@media (max-width:820px){
+  .top{gap:14px;padding:12px var(--pad)}
+  /* на узком экране от знака остаётся только квадрат: font-size:0
+     убирает слово, не трогая разметку */
+  .brandbtn{padding:0;font-size:0;gap:0}
+  .langmenu{width:min(220px,calc(100vw - 24px))}
+}
+
+/* ============================================================
+   ГЛАВНАЯ = ЭКРАН НОВОЙ ВКЛАДКИ
+   ============================================================ */
+.stage{max-width:var(--wrap);margin:0 auto;padding:0 var(--pad) clamp(48px,7vw,96px)}
+
+/* заголовок в типографическом слоте часов расширения */
+.hero{padding:clamp(30px,5vw,60px) 0 clamp(26px,3.6vw,40px);text-align:center}
+
+/* Надзаголовок над героем: имя и категория одной мелкой строкой прописными.
+   Блочный, а не строчный: у строчного нижний отступ не раздвигает соседей,
+   и заголовок прилипал вплотную. Роль по шкале — --fs-label, тот же размер,
+   что у всех надзаголовков сайта; прописным разрядка обязательна. Приглушён
+   намеренно: первым читается заголовок, а не название. */
+.hero__eyebrow{display:block;margin:0 0 var(--sp-4);
+  font-size:var(--fs-label);font-weight:var(--fw-semi);
+  letter-spacing:var(--ls-label);line-height:var(--lh-label);
+  text-transform:uppercase;color:var(--text-mute)}
+
+.hero h1{margin:0 auto;font-size:var(--fs-display);font-weight:var(--fw-display);
+  letter-spacing:var(--ls-display);line-height:var(--lh-display);max-width:20ch;
+  text-wrap:balance}
+.hero p{margin:var(--sp-5) auto 0;max-width:54ch;font-size:var(--fs-lead);
+  line-height:var(--lh-body);color:var(--text-dim);text-wrap:pretty}
+/* акцент только на двух вещах, которые отличают нас от обычных закладок:
+   что их видно каждый раз и что они лежат у пользователя. Больше выделений —
+   и глаз перестаёт различать, что здесь главное. */
+.hero p b{font-weight:var(--fw-semi);color:var(--accent)}
+.hero .row{justify-content:center}
+
+/* ============================================================
+   ВИТРИНА СНИМКОВ — лента с залипанием, листается точками.
+   Пять мест под скриншоты расширения, соотношение 16:10.
+   ============================================================ */
+/* Ширину тумана объявляем как настоящее свойство длины — иначе
+   обычная переменная не анимируется, и туман появлялся щелчком. */
+@property --fl{syntax:"<length>";inherits:false;initial-value:0px}
+@property --fr{syntax:"<length>";inherits:false;initial-value:0px}
+
+.shots{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;
+  scrollbar-width:none;-ms-overflow-style:none;padding:2px 0;
+  --fl:0px; --fr:0px;
+  /* Промежуточная точка на 45 % даёт мягкую дугу вместо прямой линейки:
+     край гаснет постепенно, без заметной кромки. */
+  -webkit-mask-image:linear-gradient(90deg,
+    transparent 0, rgba(0,0,0,.45) calc(var(--fl) * .45), #000 var(--fl),
+    #000 calc(100% - var(--fr)), rgba(0,0,0,.45) calc(100% - var(--fr) * .45), transparent 100%);
+  mask-image:linear-gradient(90deg,
+    transparent 0, rgba(0,0,0,.45) calc(var(--fl) * .45), #000 var(--fl),
+    #000 calc(100% - var(--fr)), rgba(0,0,0,.45) calc(100% - var(--fr) * .45), transparent 100%);
+  /* уход — медленнее прихода: так глазу спокойнее */
+  transition:--fl .52s var(--e-move), --fr .52s var(--e-move)}
+.shots.moving{transition:--fl .28s var(--e-move), --fr .28s var(--e-move)}
+.shots.moving.fade-l{--fl:78px}
+.shots.moving.fade-r{--fr:78px}
+.shots::-webkit-scrollbar{display:none}
+
+@media (prefers-reduced-motion:reduce){
+  .shots{transition:none}
+  .shots.moving.fade-l,.shots.moving.fade-r{--fl:0px;--fr:0px}
+}
+/* три карточки влезают в колонку целиком, обрыва у края нет;
+   листать нужно только ради четвёртой и пятой. Зазор 16 px,
+   значит на три карточки приходится два зазора — 32 px. */
+.shot{flex:none;margin:0;scroll-snap-align:start;width:calc((100% - 32px) / 3)}
+@media (max-width:900px){.shot{width:calc((100% - 16px) / 2)}}
+@media (max-width:600px){.shot{width:100%}}
+.shot__ph{aspect-ratio:16/10;border-radius:var(--r-lg);display:grid;place-items:center;
+  background:var(--s-board);backdrop-filter:var(--blur);
+  border:1px dashed var(--outline);color:var(--text-mute);font-size:var(--fs-meta);
+  overflow:hidden}
+/* когда появится настоящий снимок — картинка ляжет сюда и займёт всё место */
+.shot__ph img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
+.shot__ph:has(img){border-style:solid;border-color:var(--outline-soft);padding:0}
+
+.shotdots{display:flex;gap:7px;justify-content:center;margin-top:clamp(20px,2.4vw,28px)}
+.shotdots[hidden]{display:none}
+
+/* ============================================================
+   ПЛИТКИ ВОЗМОЖНОСТЕЙ.
+   Стекло — БАЗОВЫЙ уровень расширения (--s-card rgba(23,26,28,.52)),
+   а не «прозрачный», на котором стоит остальной сайт: плитка держит
+   длинный текст, ему нужна плотная подложка.
+   Плашка значка повторяет .lang9-globe из настроек расширения:
+   46px, радиус 12, подложка из акцента 18 %.
+   ============================================================ */
+.feats{margin-top:clamp(22px,2.6vw,32px);display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.ft{padding:clamp(20px,2.2vw,26px);border-radius:var(--r-lg);
+  background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+  box-shadow:inset 0 0 0 1px var(--outline-soft);
+  transition:transform var(--t-hover) var(--e-move),box-shadow var(--t-sm)}
+.ft:hover{transform:translateY(-2px);
+  box-shadow:inset 0 0 0 1px var(--outline),0 18px 40px -24px rgba(0,0,0,.7)}
+.ft__i{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;flex:none;
+  background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.ft__i svg{width:22px;height:22px}
+.ft h3{margin-top:var(--sp-4);font-size:var(--fs-h3);font-weight:var(--fw-semi);
+  line-height:var(--lh-title);letter-spacing:var(--ls-title)}
+.ft p{margin-top:var(--sp-2);font-size:var(--fs-ui);line-height:var(--lh-body);color:var(--text-dim)}
+@media (max-width:900px){.feats{grid-template-columns:1fr 1fr}}
+@media (max-width:600px){.feats{grid-template-columns:1fr}}
+
+/* ============================================================
+   КАРТОЧКИ ТАРИФОВ — тот же материал, что у плиток возможностей:
+   базовое стекло расширения rgba(23,26,28,.52), грань, блюр.
+   Выделенная карточка отличается только янтарной гранью,
+   а не другим цветом фона — иначе она выпадает из ряда.
+   ============================================================ */
+.plans3{margin-top:clamp(22px,2.6vw,32px);display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch}
+.pc{position:relative;display:flex;flex-direction:column;padding:clamp(20px,2.2vw,26px);
+  border-radius:var(--r-lg);background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+  box-shadow:inset 0 0 0 1px var(--outline-soft);
+  transition:transform var(--t-hover) var(--e-move),box-shadow var(--t-sm)}
+.pc:hover{transform:translateY(-2px);
+  box-shadow:inset 0 0 0 1px var(--outline),0 18px 40px -24px rgba(0,0,0,.7)}
+.pc--best{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%,var(--outline-soft))}
+.pc--best:hover{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,var(--outline)),
+  0 18px 40px -24px rgba(0,0,0,.7)}
+
+/* Метка сидит по центру верхней грани и наполовину выступает наружу —
+   компоновка как в шаблоне категории, форма наша: скруглённый прямоугольник
+   радиуса 8, как у пунктов .navtabs и кнопок .cmdpb в расширении. Овальных
+   форм в интерфейсе нет, единственная капсула там — .pill, и она не про метки.
+   Метка вынута из потока, поэтому карточки без неё не держат пустое место
+   и суммы во всех трёх стоят на одной линии. */
+/* Метка сделана выразительнее (просьба владельца): крупнее, с воздухом
+   по бокам и на ступень крупнее по тексту. Две тени работают вместе —
+   тёмное кольцо отрезает метку от грани карточки, чтобы линия грани
+   не въезжала в неё, а тёплое свечение снизу приподнимает метку над
+   карточкой. Прописные не ставим: «ОГРАНИЧЕННЫЙ ТИРАЖ» по-русски
+   разъезжается на всю карточку и начинает кричать. */
+.pc__tag{position:absolute;top:0;left:50%;transform:translate(-50%,-50%);
+  display:inline-flex;align-items:center;height:30px;padding:0 15px;
+  border-radius:9px;font-size:var(--fs-caption);font-weight:var(--fw-semi);
+  line-height:var(--lh-label);white-space:nowrap;letter-spacing:.01em;
+  color:var(--accent);
+  background:linear-gradient(rgba(236,178,70,.14),rgba(236,178,70,.14)),#0d0f11;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent),
+             0 0 20px -6px rgba(236,178,70,.55)}
+.pc__name{font-size:var(--fs-meta);font-weight:var(--fw-medium);line-height:var(--lh-ui);
+  color:var(--text-mute)}
+.pc__amt{margin-top:6px;display:flex;align-items:flex-end;gap:8px}
+.pc__amt b{font-size:var(--fs-price);font-weight:var(--fw-semi);letter-spacing:var(--ls-display);line-height:1;
+  font-variant-numeric:tabular-nums}
+.pc__amt span{font-size:var(--fs-meta);color:var(--text-mute);padding-bottom:6px}
+.pc__sub{margin-top:var(--sp-3);font-size:var(--fs-ui);line-height:var(--lh-body);color:var(--text-dim)}
+
+/* Перечень: у каждой строки галочка, шаг увеличен — иначе строки
+   слипаются в сплошной текст. Галочка та же, что у выбранного языка
+   в меню: 16×16, цвет акцента, контур толщиной 2.1.
+   flex:1 растягивает список, поэтому кнопки у всех трёх карточек
+   стоят на одной высоте, даже когда строк разное число. */
+.pc__list{margin-top:20px;flex:1;display:grid;gap:14px;align-content:start}
+.pc__list li{display:grid;grid-template-columns:16px minmax(0,1fr);gap:11px;align-items:start;
+  font-size:var(--fs-ui);line-height:var(--lh-ui);color:var(--text-dim)}
+.pc__ok{width:16px;height:16px;flex:none;color:var(--accent);margin-top:1px}
+.pc__ok svg{width:16px;height:16px;display:block}
+/* строка наследования: «всё, что в младшем тарифе» */
+.pc__all{color:var(--text);font-weight:var(--fw-semi)}
+/* акцент на главной выгоде тарифа — как в подзаголовке героя */
+.pc__sub b,.pc__list li b{color:var(--accent);font-weight:var(--fw-semi)}
+
+/* Кнопки «Оформить» с тарифов сняты (оплата ещё не подключена).
+   Стили оставлены готовыми: вернуть кнопку — одна строка в генераторе. */
+.pc__btn{margin-top:18px;height:42px;display:flex;align-items:center;justify-content:center;gap:9px;
+  border-radius:var(--r-btn);font-size:var(--fs-ui);font-weight:var(--fw-semi);
+  background:var(--s-pop);box-shadow:inset 0 0 0 1px var(--outline);
+  transition:background var(--t-sm),transform .1s var(--e-move)}
+.pc__btn:hover{background:var(--sel);transform:translateY(-1px)}
+.pc__btn span{color:var(--text-mute)}
+.pc--best .pc__btn{background:var(--accent);color:var(--accent-ink);box-shadow:none}
+.pc--best .pc__btn:hover{background:#f2c05e}
+.pc--best .pc__btn span{color:var(--accent-ink)}
+
+@media (max-width:900px){.plans3{grid-template-columns:1fr}}
+
+/* ============================================================
+   ПОМОЩЬ — три слоя: темы, разборы, живой человек.
+   Материал тот же, что у плиток возможностей и тарифов.
+   ============================================================ */
+/* Слева два канала связи, справа высокий блок с подробностями.
+   Правая колонка шире: в ней текст, левая держит только карточки. */
+.hwrap{margin-top:clamp(20px,2.4vw,28px);display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:14px;align-items:stretch}
+.hleft{display:grid;grid-template-rows:1fr 1fr;gap:14px}
+
+.hcard{display:flex;flex-direction:column;padding:clamp(20px,2.2vw,26px);border-radius:var(--r-lg);
+  background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+  box-shadow:inset 0 0 0 1px var(--outline-soft);
+  transition:transform var(--t-hover) var(--e-move),box-shadow var(--t-sm)}
+.hcard:hover{transform:translateY(-2px);
+  box-shadow:inset 0 0 0 1px var(--outline),0 18px 40px -24px rgba(0,0,0,.7)}
+/* Знак занимает место самой плашки: подложки нет, значок сам по себе.
+   Фирменный логотип идёт в своих цветах, обычный значок — акцентом. */
+.hcard__i{width:46px;height:46px;display:grid;place-items:center;flex:none;color:var(--accent)}
+.hcard__i svg{width:46px;height:46px;display:block}
+/* контурный значок на таком размере становится жирным: обводка растёт
+   вместе с масштабом, поэтому здесь она тоньше */
+.hcard__i svg[stroke]{width:42px;height:42px;stroke-width:1.5}
+.hcard b{display:block;margin-top:var(--sp-4);font-size:var(--fs-h3);font-weight:var(--fw-semi);
+  line-height:var(--lh-title);letter-spacing:var(--ls-title)}
+.hcard span{display:block;margin-top:var(--sp-2);font-size:var(--fs-ui);line-height:var(--lh-body);
+  color:var(--text-dim)}
+.hcard em{margin-top:auto;padding-top:14px;display:flex;align-items:center;gap:8px;
+  font-style:normal;font-size:var(--fs-meta);font-weight:var(--fw-medium);color:var(--accent)}
+.hcard em i{font-style:normal;transition:transform var(--t-sm) var(--e-move)}
+.hcard:hover em i{transform:translateX(3px)}
+
+.hdet{position:relative;padding:clamp(22px,2.4vw,30px);border-radius:var(--r-lg);
+  background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+  box-shadow:inset 0 0 0 1px var(--outline-soft)}
+
+.hdet__h{font-size:var(--fs-label);font-weight:var(--fw-medium);line-height:var(--lh-label);
+  letter-spacing:var(--ls-label);text-transform:uppercase;
+  color:var(--text-mute)}
+.hdet section{margin-top:16px;padding-top:15px;border-top:1px solid var(--hair)}
+.hdet section:first-of-type{margin-top:14px}
+.hdet h3{font-size:var(--fs-h4);font-weight:var(--fw-semi);line-height:var(--lh-title);
+  letter-spacing:var(--ls-title)}
+.hdet p{margin-top:var(--sp-2);font-size:var(--fs-ui);line-height:var(--lh-body);color:var(--text-dim)}
+.hdet ul{margin-top:9px;display:grid;gap:6px}
+.hdet li{position:relative;padding-left:16px;font-size:var(--fs-ui);line-height:var(--lh-ui);
+  color:var(--text-dim)}
+.hdet li::before{content:"";position:absolute;left:0;top:.68em;width:7px;height:1px;background:var(--accent)}
+.hdet code{font-family:inherit;color:var(--text)}
+
+@media (max-width:940px){
+  .hwrap{grid-template-columns:1fr}
+  .hleft{grid-template-rows:auto auto}
+}
+
+/* ============================================================
+   ОТДЕЛЬНЫЙ ЭКРАН С ФОРМОЙ.
+   Материал окна — тот же, что у окна настроек расширения (--s-win):
+   почти сплошной, со стеклом под ним.
+   ============================================================ */
+.sheet{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:var(--sp-6)}
+.sheet[hidden]{display:none}
+.sheet__bg{position:absolute;inset:0;background:rgba(4,6,9,.62);backdrop-filter:blur(6px);
+  animation:sheet-bg .16s var(--e-move)}
+@keyframes sheet-bg{from{opacity:0}to{opacity:1}}
+
+.sheet__win{position:relative;width:min(520px,100%);max-height:calc(100vh - 48px);overflow-y:auto;
+  padding:clamp(24px,3vw,32px);border-radius:var(--r-lg);
+  background:var(--s-win);border:1px solid var(--outline-soft);
+  backdrop-filter:var(--blur);box-shadow:var(--shadow-pop);
+  animation:sheet-in .18s var(--e-move)}
+@keyframes sheet-in{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+
+.sheet__x{position:absolute;top:var(--sp-3);right:var(--sp-3);width:34px;height:34px;border-radius:var(--r-sm);
+  display:grid;place-items:center;color:var(--text-mute);
+  transition:background var(--t-sm),color var(--t-sm)}
+.sheet__x:hover{background:var(--sel-h);color:var(--text)}
+.sheet__x svg{width:17px;height:17px}
+
+.sheet__h{font-size:var(--fs-h3);font-weight:var(--fw-semi);line-height:var(--lh-title);
+  letter-spacing:var(--ls-title);padding-right:40px}
+.sheet__sub{margin-top:var(--sp-2);font-size:var(--fs-ui);line-height:var(--lh-body);color:var(--text-mute)}
+
+/* Отступы по шкале --sp-*, а не на глаз: между полями 16, между подписью
+   и полем 8. Раньше здесь стояли 22, 15 и 7 — три числа мимо шкалы,
+   из-за них форма выглядела чуть сбитой, хотя каждое по отдельности казалось верным. */
+.sheet__form{margin-top:var(--sp-6);display:grid;gap:var(--sp-4)}
+.sheet__form label{display:grid;gap:var(--sp-2)}
+/* подпись поля — одна роль на все поля, включая выбор темы */
+.sheet__form label > span,.fpick__lbl{font-size:var(--fs-meta);font-weight:var(--fw-medium);
+  line-height:var(--lh-ui);color:var(--text-dim)}
+
+/* Поля один в один из расширения: .txt — высота 36, радиус 10,
+   настоящая грань --outline, при фокусе она янтарится;
+   .ta-in — радиус 12. Никаких внутренних теней вместо рамки. */
+.fin{width:100%;height:36px;padding:0 var(--sp-3);border-radius:var(--r-sm);
+  background:var(--s-card);border:1px solid var(--outline);color:var(--text);
+  font:inherit;font-size:var(--fs-ui);line-height:var(--lh-ui)}
+.fin::placeholder{color:var(--text-mute)}
+.fin:focus{outline:none;border-color:color-mix(in srgb,var(--accent) 55%,var(--outline))}
+.fta{width:100%;min-height:118px;padding:11px 13px;border-radius:12px;
+  background:var(--s-card);border:1px solid var(--outline);color:var(--text);
+  font:inherit;font-size:var(--fs-ui);line-height:var(--lh-body);resize:vertical}
+.fta::placeholder{color:var(--text-mute)}
+.fta:focus{outline:none;border-color:color-mix(in srgb,var(--accent) 55%,var(--outline))}
+
+/* Выбор темы — окно как у выбора поисковика: сплошное, padding 6,
+   радиус 14, строки 9/10 с радиусом 9. Системный список сюда не годится. */
+.fpick{position:relative;display:grid;gap:var(--sp-2)}
+.fpick__btn{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  text-align:left;cursor:pointer;color:var(--text)}
+.fpick__btn svg{width:15px;height:15px;flex:none;color:var(--text-mute);
+  transition:transform var(--t-sm) var(--e-move)}
+.fpick__btn[aria-expanded="true"] svg{transform:rotate(180deg)}
+.fpick__btn[aria-expanded="true"]{border-color:color-mix(in srgb,var(--accent) 55%,var(--outline))}
+.fpick__ph{color:var(--text-mute)}          /* пока тема не выбрана */
+.fpick__btn.has .fpick__ph{color:var(--text)}
+
+.fpick__menu{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:10;padding:6px;
+  border-radius:var(--r-md);background:var(--s-win);border:1px solid var(--outline-soft);
+  backdrop-filter:var(--blur);box-shadow:var(--shadow-pop);animation:pop-in .13s var(--e-enter)}
+/* своё всплывание: в langmenu-in зашит сдвиг на половину ширины, он увёл бы меню влево */
+@keyframes pop-in{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
+.fpick__menu[hidden]{display:none}
+.fpick__menu button{display:flex;align-items:center;gap:11px;width:100%;padding:9px 10px;
+  border-radius:9px;text-align:left;font-size:var(--fs-meta);font-weight:var(--fw-medium);
+  line-height:var(--lh-ui);color:var(--text-dim);
+  transition:background var(--t-hover),color var(--t-hover)}
+.fpick__menu button:hover{background:var(--s-card-hi);color:var(--text)}
+.fpick__menu button[aria-selected="true"]{color:var(--text)}
+.fpick__ok{margin-left:auto;flex:none;width:16px;height:16px;color:var(--accent);opacity:0}
+.fpick__ok svg{width:16px;height:16px;display:block}
+.fpick__menu button[aria-selected="true"] .fpick__ok{opacity:1}
+.sheet__send{margin-top:var(--sp-1);width:100%}
+.sheet__send:disabled{opacity:.45;cursor:default;transform:none}
+/* ── Вложения. Кнопка со скрепкой той же формы, что поля: высота 36,
+   скругление --r-sm, та же грань. Список выбранного — под ней. ── */
+.att{display:flex;align-items:center;gap:var(--sp-3);flex-wrap:wrap}
+.attbtn{display:inline-flex;align-items:center;gap:var(--sp-2);height:36px;padding:0 var(--sp-3);
+  border-radius:var(--r-sm);background:var(--s-card);border:1px solid var(--outline);
+  color:var(--text-dim);font:inherit;font-size:var(--fs-meta);font-weight:var(--fw-medium);
+  cursor:pointer;transition:background var(--t-sm),border-color var(--t-sm),color var(--t-sm)}
+.attbtn:hover{background:var(--sel-h);color:var(--text)}
+.attbtn svg{width:16px;height:16px;flex:none;stroke:currentColor;stroke-width:1.8;fill:none;
+  stroke-linecap:round;stroke-linejoin:round}
+.att__hint{font-size:var(--fs-caption);color:var(--text-mute);line-height:var(--lh-ui)}
+.attlist{list-style:none;margin:var(--sp-2) 0 0;padding:0;display:grid;gap:var(--sp-2)}
+.attlist:empty{display:none}
+.attlist li{display:flex;align-items:center;gap:var(--sp-3);padding:8px var(--sp-3);
+  border-radius:var(--r-sm);background:var(--s-card-hi);font-size:var(--fs-meta)}
+.attlist .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.attlist .sz{flex:none;color:var(--text-mute);font-size:var(--fs-caption)}
+.attlist .x{flex:none;width:24px;height:24px;border-radius:6px;background:none;border:0;
+  color:var(--text-mute);cursor:pointer;line-height:1;font-size:14px}
+.attlist .x:hover{background:var(--sel-h);color:var(--text)}
+
+/* text-wrap:balance раскладывает строки поровну — иначе последняя остаётся
+   одиноким хвостом. Класс .nb держит вместе то, что нельзя разрывать:
+   тире с адресом, число с единицей. Правило общее, не только для этой строки. */
+.sheet__note{font-size:var(--fs-caption);line-height:var(--lh-ui);color:var(--text-mute);
+  text-align:center;text-wrap:balance}
+.nb{white-space:nowrap}
+
+@media (max-width:560px){.sheet{padding:var(--sp-3)}.sheet__win{max-height:calc(100vh - 24px)}}
+.shotdots button{width:8px;height:8px;border-radius:99px;background:var(--outline);flex:none;
+  transition:width var(--t-md) var(--e-move),background var(--t-sm)}
+.shotdots button:hover{background:var(--text-mute)}
+.shotdots button.on{width:26px;background:var(--accent)}
+.hero .note{text-align:center}
+
+/* пространство = раздел сайта */
+/* Сайт листается одной страницей: разделы стоят друг под другом от
+   «Обзора» до подвала, рейл ведёт к ним якорями. Раньше они
+   переключались как пространства расширения — от того устройства
+   осталось имя класса и подсветка вкладки текущего раздела.
+   scroll-margin-top — чтобы якорь не заезжал под липкую панель. */
+.space{padding:clamp(44px,6vw,84px) 0;scroll-margin-top:88px}
+.space:first-child{padding-top:0}
+.space:last-child{padding-bottom:clamp(10px,1.4vw,18px)}
+
+/* Появление при прокрутке: карточки, плитки и заголовки поднимаются
+   и проявляются, когда доходят до экрана. Скрывают их именно стили,
+   поэтому в <head> стоит noscript-отмена — без скриптов страница
+   должна остаться читаемой, а не пустой. app.js показывает сразу то,
+   что уже на экране, и вешает наблюдателя на остальное. */
+.rv{opacity:0;transform:translateY(14px);
+  transition:opacity .5s var(--e-enter),transform .5s var(--e-enter)}
+.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  .rv{opacity:1;transform:none;transition:none}
+}
+
+/* Заголовок раздела: по центру, как весь ритм страницы. Глобальный h2
+   держит max-width 24ch под текст в потоке — здесь ширина своя. */
+.space__h{margin:0 auto;max-width:26ch;text-align:center;
+  font-size:var(--fs-h2);font-weight:var(--fw-semi);line-height:var(--lh-head);
+  letter-spacing:var(--ls-head);text-wrap:balance}
+.space__h + .space__lead{margin-top:15px}
+.space__lead{margin:0 auto clamp(22px,3vw,34px);max-width:60ch;text-align:center;
+  font-size:var(--fs-lead);line-height:var(--lh-body);color:var(--text-dim);text-wrap:pretty}
+
+/* кнопки */
+.row{display:flex;flex-wrap:wrap;gap:var(--sp-3);margin-top:var(--sp-6);align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 20px;
+  border-radius:var(--r-btn);font-size:var(--fs-ui);font-weight:var(--fw-semi);
+  line-height:1;white-space:nowrap;
+  transition:transform .1s var(--e-move),background var(--t-sm)}
+.btn:hover{transform:translateY(-1px)}
+/* обе кнопки одного размера — одинаковая геометрия и вес, различие
+   только в заливке: раньше вторичная была легче основной (550 против 600) */
+.btn-main{background:var(--accent);color:var(--accent-ink)}
+.btn-main:hover{background:#f2c05e}
+.btn-ghost{background:var(--s-card);backdrop-filter:var(--blur);color:var(--text);
+  box-shadow:inset 0 1px 0 var(--s-card-hi),inset 0 0 0 1px var(--outline)}
+.btn-ghost:hover{background:var(--s-pop)}
+.btn-sm{height:36px;padding:0 14px;font-size:var(--fs-meta)}
+/* сноска под кнопками — заведомо тише подзаголовка, иначе спорит с ним */
+.note{margin-top:var(--sp-4);font-size:var(--fs-meta);line-height:var(--lh-ui);color:var(--text-mute)}
+
+/* Отдельная страница (поддержка): сетка та же, что у разделов главной,
+   но заголовок обычный, в потоке, а не по центру — это не лендинг. */
+.page{padding:clamp(26px,4vw,52px) 0 clamp(20px,3vw,36px)}
+/* Шапка внутренней страницы стоит по центру — тем же языком, что
+   заголовки разделов на главной. Сам текст документов ниже остаётся
+   выключенным влево: центрировать длинные абзацы нельзя, глазу негде
+   искать начало строки. По центру ставится КОЛОНКА, а не строки. */
+.page > .kicker,
+.page > .page__h,
+.page > .lead{text-align:center;margin-left:auto;margin-right:auto}
+.page__h{margin-top:var(--sp-3)}
+.page .hwrap{margin-top:clamp(24px,3vw,38px)}
+
+.kicker{display:block;font-size:var(--fs-label);font-weight:var(--fw-medium);
+  line-height:var(--lh-label);letter-spacing:var(--ls-label);
+  text-transform:uppercase;color:var(--text-mute)}
+/* Ступени заголовков. Разрыв между уровнями заметный: h1 крупнее h2
+   примерно в 1,25 раза, h2 крупнее h3 в 1,8 — рядом стоящие уровни
+   не должны читаться одинаково. Ширина ограничена по числу знаков,
+   чтобы строка не растягивалась на весь монитор. */
+h1{font-size:var(--fs-h1);font-weight:var(--fw-semi);letter-spacing:var(--ls-head);
+  line-height:var(--lh-head);max-width:19ch;text-wrap:balance}
+h2{font-size:var(--fs-h2);font-weight:var(--fw-semi);letter-spacing:var(--ls-head);
+  line-height:var(--lh-head);max-width:24ch;text-wrap:balance}
+h3{font-size:var(--fs-h3);font-weight:var(--fw-semi);letter-spacing:var(--ls-title);
+  line-height:var(--lh-title)}
+.lead{margin-top:var(--sp-4);max-width:58ch;font-size:var(--fs-lead);
+  line-height:var(--lh-body);color:var(--text-dim);text-wrap:pretty}
+
+.steps{margin-top:34px;display:grid;grid-template-columns:repeat(4,1fr);
+  border:1px solid var(--hair);border-radius:var(--r-lg);overflow:hidden;background:var(--s-board)}
+.steps > li{padding:var(--sp-6) var(--sp-5);border-right:1px solid var(--hair)}
+.steps > li:last-child{border-right:0}
+/* Номер шага — янтарный: он ведёт глаз по порядку, а приглушённым
+   серым сливался с текстом и порядок читался не сразу. */
+.steps .n{font-size:var(--fs-label);font-weight:var(--fw-semi);line-height:var(--lh-label);
+  letter-spacing:var(--ls-label);color:var(--accent);font-variant-numeric:tabular-nums}
+.steps h3{margin-top:var(--sp-3);font-size:var(--fs-h3);font-weight:var(--fw-semi);
+  letter-spacing:var(--ls-title);line-height:var(--lh-title);max-width:none}
+.steps p{margin-top:var(--sp-2);font-size:var(--fs-ui);line-height:var(--lh-ui);color:var(--text-dim)}
+@media (max-width:880px){
+  .steps{grid-template-columns:1fr 1fr}
+  .steps > li:nth-child(2){border-right:0}
+  .steps > li:nth-child(-n+2){border-bottom:1px solid var(--hair)}
+}
+@media (max-width:520px){
+  .steps{grid-template-columns:1fr}
+  .steps > li{border-right:0;border-bottom:1px solid var(--hair)}
+  .steps > li:last-child{border-bottom:0}
+}
+
+.plan .btn{margin-top:18px;width:100%}
+
+.seg button.on{background:var(--sel);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.18)}
+
+/* Блок живёт отдельным пространством рейла, поэтому своей подписи
+   не носит: название раздела уже стоит вкладкой. */
+.faq{margin-top:32px;border-top:1px solid var(--hair)}
+.qa{border-bottom:1px solid var(--hair)}
+.qa > button{display:flex;width:100%;gap:18px;align-items:baseline;justify-content:space-between;
+  padding:var(--sp-4) 0;text-align:left;font-size:var(--fs-body);font-weight:var(--fw-medium);
+  line-height:var(--lh-ui);
+  transition:color var(--t-sm)}
+.qa > button:hover{color:var(--text-dim)}
+.qa .sign{font-size:var(--fs-body);line-height:1;color:var(--text-mute);flex:none;
+  transition:transform var(--t-md) var(--e-move)}
+.qa.open .sign{transform:rotate(45deg)}
+.qa .ans{max-height:0;overflow:hidden;transition:max-height var(--t-md) var(--e-move)}
+.qa .ans p{padding:0 0 var(--sp-4);max-width:66ch;font-size:var(--fs-ui);
+  line-height:var(--lh-body);color:var(--text-dim)}
+
+
+/* ============================================================
+   ЮРИДИЧЕСКИЕ ДОКУМЕНТЫ
+   Длинный текст: колонка ограничена по числу знаков, заголовки
+   разделов заметно тише h1, между разделами воздух больше, чем
+   между абзацами внутри раздела.
+   ============================================================ */
+/* перемычка: с любого документа видно остальные */
+.doclinks{margin:var(--sp-6) auto 0;max-width:68ch;display:flex;flex-wrap:wrap;
+  justify-content:center;gap:var(--sp-2);
+  padding-bottom:var(--sp-6);border-bottom:1px solid var(--hair)}
+.doclinks a,.doclinks__on{display:inline-flex;align-items:center;height:30px;padding:0 12px;
+  border-radius:8px;font-size:var(--fs-meta);font-weight:var(--fw-medium);
+  line-height:var(--lh-ui);white-space:nowrap;transition:background var(--t-sm),color var(--t-sm)}
+.doclinks a{color:var(--text-dim);background:var(--s-board);
+  box-shadow:inset 0 0 0 1px var(--outline-soft)}
+.doclinks a:hover{background:var(--sel-h);color:var(--text)}
+.doclinks__on{background:var(--sel);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.18)}
+
+.doc{margin:var(--sp-8) auto 0;max-width:68ch}
+.doc__upd{font-size:var(--fs-caption);line-height:var(--lh-ui);color:var(--text-mute)}
+.doc h2{margin-top:var(--sp-10);font-size:var(--fs-h3);font-weight:var(--fw-semi);
+  line-height:var(--lh-title);letter-spacing:var(--ls-title);max-width:none}
+.doc h2:first-of-type{margin-top:var(--sp-8)}
+.doc p{margin-top:var(--sp-3);font-size:var(--fs-ui);line-height:var(--lh-body);color:var(--text-dim)}
+.doc ul{margin-top:var(--sp-3);display:grid;gap:var(--sp-2)}
+.doc li{position:relative;padding-left:18px;font-size:var(--fs-ui);
+  line-height:var(--lh-body);color:var(--text-dim)}
+.doc li::before{content:"";position:absolute;left:0;top:.72em;width:7px;height:1px;
+  background:var(--accent)}
+.doc b{color:var(--text);font-weight:var(--fw-semi)}
+.doc a{color:var(--text);text-decoration:underline;text-decoration-color:var(--hair);
+  text-underline-offset:3px;transition:text-decoration-color var(--t-sm)}
+.doc a:hover{text-decoration-color:var(--accent)}
+/* ============================================================
+   ШАПКА И ПОДВАЛ СТРАНИЦ ОПЛАТЫ
+   На экране оплаты нет разделов, языка и кнопки установки: каждая
+   посторонняя ссылка отсюда — выход без покупки. Так устроено везде,
+   где оплату делают всерьёз. Остаётся знак — он держит доверие
+   и служит выходом тому, кто передумал.
+   ============================================================ */
+/* Нижнее поле обёртки на страницах оплаты короче. Верх не трогаем — там
+   всё стоит как надо; лишняя пустота снизу, оставшаяся от подвала, просто
+   выталкивала месячный тариф (у него самый длинный перечень) за край экрана.
+   Правило: страница оплаты помещается в экран при ЛЮБОМ выбранном тарифе. */
+.stage--pay{padding-bottom:var(--sp-6)}
+
+/* Выбор языка на страницах оплаты. Место выбрано так, чтобы кнопка была
+   на виду, но не стояла рядом с суммой и оплатой: верхний правый угол —
+   там же, где её ищут на любой странице сайта. Меню раскрывается влево,
+   иначе на узком экране оно уходило бы за край. */
+.paytop{position:absolute;top:clamp(12px,1.6vw,20px);right:clamp(16px,2.4vw,32px);z-index:70}
+.paytop .langmenu{left:auto;right:0;transform:none;
+  animation:langmenu-right-in .13s var(--e-enter)}
+@keyframes langmenu-right-in{
+  from{opacity:0;transform:translateY(-4px) scale(.98)}
+  to{opacity:1;transform:none}}
+
+/* Знак, заголовок и строка под ним — по центру. Размер знака выведен
+   из кегля слова рядом, как и везде в проекте: слово 20, знак 42 — та же
+   пропорция, что в панели сайта (16 и 34). На глаз ничего не подбиралось.
+
+   Верх поджат намеренно: на этой странице всё — знак, тарифы, счёт
+   и перечень самого длинного тарифа — обязано умещаться в один экран.
+   Прокрутка на шаге оплаты прячет кнопку, а спрятанную кнопку не нажимают. */
+.payhead{margin:0 auto;padding-top:clamp(16px,2vw,26px);max-width:760px;text-align:center}
+.paybrand{display:inline-flex;align-items:center;gap:14px;
+  font-size:20px;font-weight:var(--fw-regular);line-height:var(--lh-title);
+  color:var(--text);transition:opacity var(--t-sm)}
+.paybrand span{text-transform:uppercase;letter-spacing:.20em;padding-right:.20em}
+.paybrand:hover{opacity:.78}
+.paybrand i{display:block;flex:none;font-style:normal}
+.paybrand i b{display:block;width:42px;height:41px;
+  background:url("znak.png?v=2155e470") center/contain no-repeat}
+/* Набор ровно тот же, что у заголовков остальных страниц сайта: та же
+   разрядка и то же междустрочие. Своя разрядка «для крупного» делала
+   надпись плотнее соседей — она и читалась как чужая.
+   Ограничение ширины в 19 знаков снято: оно тоже общее для h1 и рвало
+   «Откройте Lanelis полностью» на две строки посреди имени. */
+.payhead__h{margin-top:clamp(14px,1.8vw,20px);max-width:none;
+  font-size:clamp(25px,2.7vw,33px);font-weight:var(--fw-semi);
+  line-height:var(--lh-head);letter-spacing:var(--ls-head);
+  color:var(--text);text-wrap:balance}
+.payhead__sub{margin-top:var(--sp-2);font-size:var(--fs-ui);line-height:var(--lh-body);
+  color:var(--text-mute);text-wrap:balance}
+/* ============================================================
+   ОФОРМЛЕНИЕ ПОДПИСКИ
+   Устройство подсмотрено у тех, кто продаёт то же самое: Raindrop, Workona,
+   Momentum, Toby из прямых; Proton, Obsidian, Kagi, Todoist, Ghost и сама
+   платёжная страница Platega — из тех, кто делает оплату хорошо. Общее
+   у всех одно: слева выбор, справа счёт, видный всё время, и ОДНА кнопка,
+   на которой написана сумма. Исследования Baymard про то же — люди бросают
+   оплату, когда итог всплывает в последний момент.
+
+   Плотность важнее простора: это рабочий экран на одну минуту, а не витрина.
+   ============================================================ */
+/* Правая колонка стала шире: в ней теперь и почта, и итог, и кнопка.
+   Общая ширина увеличена ровно на ту же величину, поэтому левая колонка
+   и карточки тарифов в ней остались прежнего размера. */
+.co{margin:clamp(20px,2.4vw,28px) auto 0;max-width:990px;display:grid;
+  grid-template-columns:minmax(0,1fr) 390px;gap:var(--sp-6);align-items:start}
+.co__main{min-width:0}
+.co__lbl{font-size:var(--fs-label);font-weight:var(--fw-medium);line-height:var(--lh-label);
+  letter-spacing:var(--ls-label);text-transform:uppercase;color:var(--text-mute)}
+/* Метка второго и следующих разделов отбивается сверху. Без этого правила
+   «ЧТО ВХОДИТ» садится вплотную на карточки тарифов — ровно это и было
+   на первом снимке. */
+/* Метка после карточек тарифов: без этого правила «Что входит» садилось
+   прямо на их нижнюю грань. Отступ учитывает, что метка тарифа выступает
+   ВВЕРХ, а не вниз, поэтому снизу воздуха нужно меньше, чем сверху. */
+.co__main > .coplans + .co__lbl{margin-top:var(--sp-6)}
+
+/* Кто платит. Почта приходит из расширения сама: человек там уже вошёл,
+   и повторный ввод плодит опечатки и оплату не на тот аккаунт. */
+.cowho{margin-top:var(--sp-4);padding-top:var(--sp-4);min-height:82px;
+  border-top:1px solid var(--outline-soft)}
+.cowho__wait{font-size:var(--fs-meta);line-height:var(--lh-ui);color:var(--text-mute)}
+.cowho__mail{font-size:var(--fs-meta);line-height:var(--lh-ui);color:var(--text-mute)}
+.cowho__mail b{color:var(--text);font-weight:var(--fw-semi)}
+.cowho__state{margin-top:var(--sp-1);font-size:var(--fs-caption);line-height:var(--lh-body);
+  color:var(--text-mute);text-wrap:pretty}
+.cowho__state b{color:var(--text-dim);font-weight:var(--fw-medium)}
+.cowho .co__field{margin-top:0}
+.cowho .fin{height:38px}
+
+/* Три тарифа рядом. Метка тиража и скидки стоит ВНУТРИ карточки, первой
+   строкой: выступающая наружу метка на узкой карточке вылезала за её край
+   и накрывала соседнюю. Место под метку держат все три карточки, поэтому
+   названия, цены и строки продления стоят на одной линии. */
+.coplans{margin-top:var(--sp-5);display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3)}
+.coplan{position:relative;display:flex;flex-direction:column;
+  padding:var(--sp-4);border-radius:var(--r-md);text-align:left;
+  background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+  box-shadow:inset 0 0 0 1px var(--outline-soft);
+  transition:box-shadow var(--t-sm),background var(--t-sm)}
+.coplan:hover{box-shadow:inset 0 0 0 1px var(--outline)}
+.coplan.on{background:rgba(28,31,34,.62);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,var(--outline))}
+.coplan__ok{position:absolute;top:var(--sp-4);right:var(--sp-4);width:15px;height:15px;
+  color:var(--accent);opacity:0;transition:opacity var(--t-sm)}
+.coplan__ok svg{width:15px;height:15px;display:block}
+.coplan.on .coplan__ok{opacity:1}
+/* Метка сидит на верхней грани карточки и наполовину выступает наружу —
+   ровно как на витрине, в разделе «Цены». Она ВНЕ потока, поэтому карточка
+   без метки не держит под неё пустое место и содержимое всех трёх стоит
+   на одной линии. Тёмное кольцо отрезает метку от грани, свечение приподнимает.
+   Размеры те же, что на главной: страница обязана выглядеть её продолжением. */
+.coplan__tag{position:absolute;top:0;left:50%;transform:translate(-50%,-50%);
+  display:inline-flex;align-items:center;height:25px;padding:0 11px;
+  border-radius:8px;font-size:var(--fs-label);font-weight:var(--fw-semi);
+  line-height:1;white-space:nowrap;letter-spacing:.01em;
+  color:var(--accent);
+  background:linear-gradient(rgba(236,178,70,.14),rgba(236,178,70,.14)),#0d0f11;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent),
+             0 0 18px -6px rgba(236,178,70,.55)}
+.coplan__n{font-size:var(--fs-meta);font-weight:var(--fw-medium);
+  line-height:var(--lh-ui);color:var(--text-mute)}
+.coplan__p{margin-top:var(--sp-1);display:flex;align-items:baseline;gap:5px;
+  font-size:21px;font-weight:var(--fw-semi);letter-spacing:var(--ls-title);
+  line-height:1.15;color:var(--text);font-variant-numeric:tabular-nums}
+.coplan__p i{font-style:normal;font-size:var(--fs-caption);font-weight:var(--fw-regular);
+  color:var(--text-mute)}
+.coplan__r{margin-top:var(--sp-2);font-size:var(--fs-caption);line-height:var(--lh-ui);
+  color:var(--text-mute)}
+.coplan[disabled]{opacity:.4;pointer-events:none}
+@media (max-width:620px){.coplans{grid-template-columns:1fr}}
+
+.co__field{display:block}
+.co__field > span{display:block;margin-bottom:var(--sp-2);font-size:var(--fs-meta);
+  font-weight:var(--fw-medium);line-height:var(--lh-ui);color:var(--text-dim)}
+
+/* Что входит — под тарифами. Раньше перечень стоял в счёте, и колонки
+   расходились по высоте на четыреста пикселей: справа полотно, слева три
+   карточки и пустота. Здесь он и по смыслу на месте — это продолжение
+   выбора, а не часть расчёта. */
+/* Материал тот же, что у карточек тарифов и счёта: то же стекло, та же
+   грань. Прежний фон был прозрачнее, и плашка выглядела чужой на странице. */
+.cofeat{margin-top:var(--sp-3);padding:var(--sp-5);border-radius:var(--r-md);
+  background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+  box-shadow:inset 0 0 0 1px var(--outline-soft);
+  /* Две колонки — но только пока колонка шире 250: при 576 у левой части
+     страницы это ровно два столбца по 258, и каждый пункт умещается в одну
+     строку. Стоит окну сузиться — колонка становится одна, и переносов
+     снова нет. Задано шириной, а не числом с переломом по окну: ширина
+     колонки — это то, от чего перенос и зависит, а перелом пришлось бы
+     подгонять под отступы страницы и он разъезжался бы при их правке. */
+  columns:250px 2;column-gap:var(--sp-5)}
+.cofeat li{break-inside:avoid;margin-bottom:var(--sp-3);
+  display:grid;grid-template-columns:15px minmax(0,1fr);gap:9px;align-items:start;
+  font-size:var(--fs-meta);line-height:var(--lh-ui);color:var(--text-dim);text-wrap:balance}
+.cofeat li:last-child{margin-bottom:0}
+.cofeat b{color:var(--accent);font-weight:var(--fw-semi)}
+.cofeat__all{color:var(--text);font-weight:var(--fw-semi)}
+.cofeat__ok{width:15px;height:15px;flex:none;color:var(--accent);margin-top:1px}
+.cofeat__ok svg{width:15px;height:15px;display:block}
+/* Отдельного перелома для узкого окна больше не нужно: колонка схлопывается
+   сама, как только перестаёт помещаться. */
+
+/* Незаполненное поле: акцентная грань и короткая встряска САМОГО поля —
+   так же, как в окне удаления аккаунта в расширении. Слов не добавляем:
+   человек и так видит, куда смотреть, а появившаяся строка сдвигает
+   счёт с кнопкой и читается как второй сбой.
+   Трясётся именно поле, а не обёртка: в обёртке лежит ещё и надпись
+   «Почта, которой вы входите в Lanelis», и вместе с ней дёргался
+   весь блок целиком.
+   Встряска отключается, если человек просил меньше движения в системе. */
+.co__field .fin[aria-invalid="true"]{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+@keyframes co-shake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-5px)}
+  40%{transform:translateX(4px)}
+  60%{transform:translateX(-3px)}
+  80%{transform:translateX(2px)}}
+.co__field .fin.shake{animation:co-shake .32s var(--e-move)}
+@media (prefers-reduced-motion:reduce){.co__field .fin.shake{animation:none}}
+
+.backlink{display:block;margin:var(--sp-6) auto 0;padding:6px 10px;
+  font-size:var(--fs-meta);line-height:var(--lh-ui);color:var(--text-mute);
+  border-radius:var(--r-sm);transition:color var(--t-sm)}
+.backlink:hover{color:var(--text-dim)}
+.backlink[disabled]{color:var(--text-mute);cursor:default}
+
+/* Сообщение о неудаче. Красного в палитре нет и заводить его ради одной
+   строки не стоит — тревогу держит акцентная грань слева. */
+.coerr{margin-top:var(--sp-6);padding:var(--sp-3) var(--sp-4);border-radius:var(--r-sm);
+  background:var(--s-pop);box-shadow:inset 2px 0 0 var(--accent);
+  font-size:var(--fs-meta);line-height:var(--lh-body);color:var(--text-dim);text-wrap:pretty}
+
+/* Счёт. Тот же материал, что карточки тарифов. */
+.co__side{position:sticky;top:88px}
+.cosum{margin-top:var(--sp-3);padding:var(--sp-5);border-radius:var(--r-lg);
+  background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+  box-shadow:inset 0 0 0 1px var(--outline-soft)}
+.cosum__plan b{font-size:var(--fs-h3);font-weight:var(--fw-semi);
+  line-height:var(--lh-title);letter-spacing:var(--ls-title)}
+.cosum__plan span{display:block;margin-top:2px;font-size:var(--fs-caption);
+  line-height:var(--lh-ui);color:var(--text-mute)}
+.cosum__sub{margin-top:var(--sp-3);font-size:var(--fs-caption);line-height:var(--lh-body);
+  color:var(--text-mute);text-wrap:pretty}
+.cosum__sub b{color:var(--accent);font-weight:var(--fw-semi)}
+
+/* Итог. Подпись и сумма набраны соседними кеглями и стоят на одной базовой
+   линии: 13 против 30, как было раньше, разваливало строку на два разных
+   по весу куска. */
+.cosum__total{margin-top:var(--sp-5);padding-top:var(--sp-4);
+  border-top:1px solid var(--outline-soft);
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.cosum__total span{font-size:var(--fs-ui);color:var(--text-dim)}
+.cosum__total b{font-size:23px;font-weight:var(--fw-semi);letter-spacing:var(--ls-title);
+  line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cosum__when{margin-top:var(--sp-2);min-height:20px;
+  font-size:var(--fs-caption);line-height:var(--lh-body);
+  color:var(--text-mute);text-wrap:pretty}
+.cosum__when b{color:var(--text-dim);font-weight:var(--fw-medium)}
+
+.cosum__go{margin-top:var(--sp-4);width:100%;height:44px;
+  display:flex;align-items:center;justify-content:center;border-radius:var(--r-btn);
+  background:var(--accent);color:var(--accent-ink);
+  font-size:var(--fs-ui);font-weight:var(--fw-semi);
+  transition:background var(--t-sm),transform .1s var(--e-move);
+  box-shadow:0 10px 24px -14px rgba(236,178,70,.9)}
+.cosum__go:hover{background:#f2c05e;transform:translateY(-1px)}
+.cosum__go:active{transform:none}
+.cosum__go[disabled]{opacity:.5;transform:none;box-shadow:none;cursor:default}
+.cosum__go[disabled]:hover{background:var(--accent);transform:none}
+
+/* Что снимает тревогу перед нажатием. Значков платёжных систем не ставим:
+   это чужие марки, и на тёмном фоне из них получается ярмарка. */
+.cosum__ways{margin-top:var(--sp-3);text-align:center;
+  font-size:var(--fs-caption);line-height:var(--lh-ui);color:var(--text-dim)}
+.cosum__safe{margin-top:var(--sp-3);padding-top:var(--sp-3);
+  border-top:1px solid var(--outline-soft);
+  font-size:var(--fs-caption);line-height:var(--lh-body);color:var(--text-mute);text-wrap:pretty}
+.cosum__safe a{color:var(--text-dim);text-decoration:underline;text-underline-offset:2px}
+.cosum__safe a:hover{color:var(--accent)}
+
+@media (max-width:900px){
+  .co{grid-template-columns:1fr}
+  .co__side{position:static}
+}
+
+/* ============================================================
+   ОПЛАТА ПРОШЛА
+   Человек ждёт здесь трёх вещей: что деньги дошли, чек с номером заказа
+   и что делать дальше. Ровно этот набор советуют разборы страниц
+   подтверждения — и ровно он помещается тут без прокрутки.
+   ============================================================ */
+.done{margin:clamp(20px,2.4vw,28px) auto 0;max-width:560px;
+  padding:var(--sp-6);border-radius:var(--r-lg);
+  background:rgba(23,26,28,.52);backdrop-filter:var(--blur);
+  box-shadow:inset 0 0 0 1px var(--outline-soft)}
+/* Знак и заголовок стоят в строку, а не столбиком: так шапка занимает
+   одну высоту вместо трёх и читается как заголовок чека. Знак выровнен
+   по середине текстового блока — пояснение занимает две строки, и прижатый
+   к верху знак оставался в углу сам по себе. */
+.done__head{display:flex;align-items:center;gap:var(--sp-4)}
+/* Знак сделан ровно как метка «Скидка 50 %» на карточках тарифов: тёмная
+   подложка, светящийся акцентный контур, акцентная галочка. Квадрат
+   со скруглением, а не круг: круглых форм в интерфейсе нет.
+   Переходов нет: на этой странице ничего не должно двигаться и загораться,
+   кроме появления шапки. */
+.done__mark{flex:none;width:40px;height:40px;border-radius:var(--r-md);
+  display:grid;place-items:center;color:var(--accent);
+  background:linear-gradient(rgba(236,178,70,.14),rgba(236,178,70,.14)),#0d0f11;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent),
+             0 0 20px -6px rgba(236,178,70,.55)}
+.done__mark svg{width:20px;height:20px;display:block}
+.done__h{font-size:var(--fs-h3);font-weight:var(--fw-semi);line-height:1.3;
+  letter-spacing:var(--ls-title);color:var(--text);text-wrap:pretty}
+.done__sub{margin-top:var(--sp-1);font-size:var(--fs-meta);line-height:var(--lh-body);
+  color:var(--text-mute);text-wrap:pretty}
+
+/* Чек — одна плитка на четыре значения, а не список строк с линейками.
+   Строки через разделители читались как таблица настроек: информативно,
+   но неопрятно. Подпись стоит НАД значением, ячейки идут парами. */
+.rcpt{margin-top:var(--sp-6);padding:var(--sp-5);border-radius:var(--r-md);
+  background:var(--s-pop);box-shadow:inset 0 0 0 1px var(--outline-soft);
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-4) var(--sp-5)}
+/* Подпись ячейки — только прямой потомок: внутри значения теперь тоже есть
+   span (номер заказа рядом с кнопкой), и он не должен стать заглавной
+   меткой. */
+.rcpt > div > span{display:block;font-size:var(--fs-label);font-weight:var(--fw-medium);
+  letter-spacing:var(--ls-label);text-transform:uppercase;color:var(--text-mute)}
+.rcpt b{display:block;margin-top:3px;font-size:var(--fs-ui);font-weight:var(--fw-semi);
+  color:var(--text);font-variant-numeric:tabular-nums;text-wrap:pretty}
+/* Номер и кнопка стоят на одной строке; кнопка не растягивается
+   и не сдвигает номер, когда появляется. */
+.rcpt b.rcpt__num{display:flex;align-items:center;gap:9px}
+
+/* Кнопка копирования. Значок и галочка лежат в одной клетке сетки, друг
+   поверх друга: подтверждение показывается сменой картинки, а не новой
+   строкой, поэтому чек не меняет высоту. */
+.copy{flex:none;display:grid;width:26px;height:26px;place-items:center;
+  border-radius:var(--r-sm);color:var(--text-mute);
+  transition:color var(--t-sm),background var(--t-sm)}
+.copy svg{grid-area:1/1;width:15px;height:15px;display:block;
+  transition:opacity var(--t-sm)}
+.copy svg + svg{opacity:0}
+.copy:hover{color:var(--text);background:var(--s-card)}
+.copy:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.copy.ok{color:var(--accent)}
+.copy.ok svg:first-child{opacity:0}
+.copy.ok svg + svg{opacity:1}
+@media (prefers-reduced-motion:reduce){.copy,.copy svg{transition:none}}
+
+/* Строка для читалок экрана: смену значка им не видно, а знать,
+   что номер скопирован, надо. Глазами не видна нигде. */
+.said{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+  clip-path:inset(50%);white-space:nowrap;border:0}
+
+.done__lbl{margin-top:var(--sp-6);padding-top:var(--sp-5);
+  border-top:1px solid var(--outline-soft);font-size:var(--fs-label);font-weight:var(--fw-medium);
+  line-height:var(--lh-label);letter-spacing:var(--ls-label);text-transform:uppercase;
+  color:var(--text-mute)}
+/* Пометка вместо номера. Цифры обещают очередь — «сначала первое, потом
+   второе», а здесь очереди нет: вкладка работает и так, обновление нужно
+   только тому, у кого открыт экран продления. Сама пометка — скруглённый
+   квадратик, а не точка: круглых форм в наборе нет нигде.
+   Отступ сверху выведен из строки, а не подобран: половина высоты строки
+   минус половина пометки. Поэтому одно правило садится ровно и на
+   тринадцатый кегль списка, и на двенадцать с половиной у помощи. */
+.done__next{margin-top:var(--sp-3);display:grid;gap:var(--sp-3)}
+.done__next li{display:grid;grid-template-columns:5px minmax(0,1fr);gap:11px;align-items:start;
+  font-size:var(--fs-meta);line-height:var(--lh-body);color:var(--text-dim);text-wrap:pretty}
+.done__next li::before{content:"";width:5px;height:5px;border-radius:1.5px;
+  background:var(--text-mute);margin-top:calc(var(--lh-body) / 2 * 1em - 2.5px)}
+/* Помощь — такая же пометка, только мельче: это не шаг, а запасной выход,
+   если что-то непонятно.
+   Пометка вешается отступом и выносом, а НЕ сеткой: внутри абзаца есть
+   ссылки, и в сетке каждая из них становится отдельной клеткой — строка
+   рассыпается на столбик, абзац вырастает вдвое. Проверено. */
+.done__help{position:relative;margin-top:var(--sp-6);padding:var(--sp-4) 0 0 16px;
+  border-top:1px solid var(--outline-soft);
+  font-size:var(--fs-caption);line-height:var(--lh-body);color:var(--text-mute);text-wrap:pretty}
+.done__help::before{content:"";position:absolute;left:0;
+  top:calc(var(--sp-4) + var(--lh-body) / 2 * 1em - 2.5px);
+  width:5px;height:5px;border-radius:1.5px;background:var(--text-mute)}
+.done__help a{color:var(--text-dim);text-decoration:underline;text-underline-offset:2px}
+.done__help a:hover{color:var(--accent)}
+
+/* ============================================================
+   ПОДВАЛ
+   ============================================================ */
+.foot{border-top:1px solid var(--hair);background:rgba(9,10,13,.5);backdrop-filter:var(--blur)}
+.foot__in{max-width:var(--wrap);margin:0 auto;padding:clamp(34px,4.6vw,56px) var(--pad)}
+/* брендовый блок + три столбца; число столбцов = длина FOOT в генераторе, менять вместе */
+.foot__cols{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:30px}
+.foot__about{font-size:var(--fs-meta);line-height:var(--lh-body);color:var(--text-mute);
+  margin-top:var(--sp-3);max-width:34ch}
+.foot__h{font-size:var(--fs-label);font-weight:var(--fw-medium);line-height:var(--lh-label);
+  letter-spacing:var(--ls-label);text-transform:uppercase;
+  color:var(--text-mute);margin-bottom:13px}
+.foot ul{display:grid;gap:9px}
+.foot ul a{font-size:var(--fs-meta);line-height:var(--lh-ui);color:var(--text-dim);
+  transition:color var(--t-sm)}
+.foot ul a:hover{color:var(--text)}
+/* Заглушки в подвале: подпись на месте, адреса пока нет. Цвет как
+   у настоящих ссылок, но курсор обычный и подсветки при наведении нет —
+   чтобы не обещать переход, которого не будет. */
+.foot a:not([href]){cursor:default}
+.foot ul a:not([href]):hover{color:var(--text-dim)}
+.foot__legal a:not([href]):hover{color:var(--text-mute)}
+
+/* нижняя строка: слева права, справа юридические страницы коротким перечнем */
+.foot__legal{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+.foot__legal a{color:var(--text-mute);transition:color var(--t-sm)}
+.foot__legal a:hover{color:var(--text)}
+.foot__bar{margin-top:32px;padding-top:20px;border-top:1px solid var(--hair);
+  display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;
+  font-size:var(--fs-caption);line-height:var(--lh-ui);color:var(--text-mute)}
+.brand span,.brand{text-transform:uppercase;letter-spacing:.18em}
+.brand{display:inline-flex;align-items:center;gap:12px;font-size:15px;font-weight:400;
+  font-weight:var(--fw-semi);line-height:var(--lh-title);letter-spacing:var(--ls-title)}
+.brand i{display:block;flex:none;font-style:normal}
+.brand i b{display:block;width:24px;height:23px;
+  background:url("znak.png?v=2155e470") center/contain no-repeat}
+@media (max-width:860px){.foot__cols{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.foot__cols{grid-template-columns:1fr}}
