@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="glass" x1="36" y1="24" x2="220" y2="236" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#30363D" stop-opacity=".94"/>
+      <stop offset=".46" stop-color="#171B20" stop-opacity=".91"/>
+      <stop offset="1" stop-color="#0B0E12" stop-opacity=".96"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="52" y1="18" x2="202" y2="238" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity=".34"/>
+      <stop offset=".42" stop-color="#FFFFFF" stop-opacity=".10"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity=".04"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="0" cy="0" r="1" gradientTransform="translate(77 47) rotate(50) scale(172)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity=".15"/>
+      <stop offset=".58" stop-color="#FFFFFF" stop-opacity=".025"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="9" stdDeviation="11" flood-color="#000000" flood-opacity=".42"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="18" y="16" width="220" height="220" rx="54" fill="url(#glass)"/>
+    <rect x="18.75" y="16.75" width="218.5" height="218.5" rx="53.25" fill="none" stroke="url(#edge)" stroke-width="1.5"/>
+    <rect x="26" y="24" width="204" height="204" rx="47" fill="url(#shine)"/>
+  </g>
+  <!-- Тот же знак, что у расширения, но заметно меньше и на собственной
+       стеклянной плитке: favicon сайта нельзя спутать с кнопкой расширения. -->
+  <image href="znak.png" x="52" y="55" width="152" height="146" preserveAspectRatio="xMidYMid meet"/>
+</svg>

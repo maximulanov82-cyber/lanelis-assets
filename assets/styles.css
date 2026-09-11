@@ -323,11 +323,10 @@ body.pay #bg::after{display:none}
 }
 
 .brandbtn i{display:block;flex:none;font-style:normal}
-/* Знак вместо прежней янтарной плашки. Соотношение 0,836 взято из самой
-   картинки, поэтому знак не сплющивается. Файл обрезан по краям знака:
-   в исходном кадре он занимал девятую часть площади. */
-.brandbtn i b{display:block;width:34px;height:33px;
-  background:url("znak.png?v=2155e470") center/contain no-repeat}
+/* Значок сайта намеренно отличается от кнопки расширения: тот же знак немного
+   уменьшен и лежит на тёмной стеклянной плитке. */
+.brandbtn i b{display:block;width:32px;height:32px;
+  background:url("site-icon.png?v=2bb8524a") center/contain no-repeat}
 
 /* РЕЙЛ ПРОСТРАНСТВ = разделы сайта. Значения из .sp-rail/.sp-tab расширения:
    плашка pad 4 / радиус 12 / --s-board; вкладка 30px, padding 0 12, радиус 8;
@@ -1302,8 +1301,8 @@ h3{font-size:var(--fs-h3);font-weight:var(--fw-semi);letter-spacing:var(--ls-tit
 }
 
 .paybrand i{display:block;flex:none;font-style:normal}
-.paybrand i b{display:block;width:42px;height:41px;
-  background:url("znak.png?v=2155e470") center/contain no-repeat}
+.paybrand i b{display:block;width:40px;height:40px;
+  background:url("site-icon.png?v=2bb8524a") center/contain no-repeat}
 /* Набор ровно тот же, что у заголовков остальных страниц сайта: та же
    разрядка и то же междустрочие. Своя разрядка «для крупного» делала
    надпись плотнее соседей — она и читалась как чужая.
@@ -1733,8 +1732,8 @@ h3{font-size:var(--fs-h3);font-weight:var(--fw-semi);letter-spacing:var(--ls-tit
 .brand{display:inline-flex;align-items:center;gap:12px;font-size:15px;font-weight:400;
   font-weight:var(--fw-semi);line-height:var(--lh-title);letter-spacing:var(--ls-title)}
 .brand i{display:block;flex:none;font-style:normal}
-.brand i b{display:block;width:24px;height:23px;
-  background:url("znak.png?v=2155e470") center/contain no-repeat}
+.brand i b{display:block;width:22px;height:22px;
+  background:url("site-icon.png?v=2bb8524a") center/contain no-repeat}
 @media (max-width:860px){.foot__cols{grid-template-columns:1fr 1fr}}
 @media (max-width:520px){.foot__cols{grid-template-columns:1fr}}
 
