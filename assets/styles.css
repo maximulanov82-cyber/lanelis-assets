@@ -907,7 +907,8 @@ body.pay #bg::after{display:none}
 .shotnav--prev{left:clamp(8px,1.2vw,16px)}
 .shotnav--next{right:clamp(8px,1.2vw,16px)}
 .shotnav[hidden]{display:none}
-.shotnav:disabled,.shotviewer__nav:disabled{opacity:.28;pointer-events:none}
+.shotnav:disabled{opacity:0;visibility:hidden;pointer-events:none}
+.shotviewer__nav:disabled{opacity:.28;pointer-events:none}
 @media (hover:hover){
   .shotnav:not(:disabled):hover,.shotviewer__nav:not(:disabled):hover,.shotviewer__close:hover{
     background:rgba(42,47,51,.92);border-color:color-mix(in srgb,var(--accent) 45%,rgba(255,255,255,.14))}
