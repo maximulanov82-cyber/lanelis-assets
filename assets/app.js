@@ -678,12 +678,18 @@
   document.querySelectorAll('.qa').forEach(function (qa) {
     var b = qa.querySelector('button'), a = qa.querySelector('.ans');
     if (!b || !a) return;
+    qa.classList.remove('open');
     b.setAttribute('aria-expanded', 'false');
     b.addEventListener('click', function () {
       var open = !qa.classList.contains('open');
+      document.querySelectorAll('.qa.open').forEach(function (other) {
+        if (other === qa) return;
+        other.classList.remove('open');
+        var otherButton = other.querySelector('button');
+        if (otherButton) otherButton.setAttribute('aria-expanded', 'false');
+      });
       qa.classList.toggle('open', open);
       b.setAttribute('aria-expanded', open ? 'true' : 'false');
-      a.style.maxHeight = open ? a.scrollHeight + 'px' : '0px';
     });
   });
 
@@ -898,13 +904,12 @@
     form.addEventListener('reset', function () { setTimeout(function () { input.value = ''; draw(); }, 0); });
   });
 
-  /* ---------- Витрина снимков: лента + точки ----------
-     Точки строятся по числу карточек, так что добавить шестой
-     снимок можно правкой одной только разметки. */
+  /* ---------- Витрина снимков: лента + стрелки + крупный просмотр ---------- */
   var shots = document.getElementById('shots');
-  var shotDots = document.getElementById('shotDots');
-  if (shots && shotDots) {
+  if (shots) {
     var cards = [].slice.call(shots.querySelectorAll('.shot'));
+    var prev = document.getElementById('shotPrev');
+    var next = document.getElementById('shotNext');
 
     var stepW = function () {
       if (!cards[0]) return 0;
@@ -913,71 +918,93 @@
     };
     var maxScroll = function () { return shots.scrollWidth - shots.clientWidth; };
 
-    /* Точка = ПОЛОЖЕНИЕ ЛЕНТЫ, а не карточка. При пяти снимках и трёх
-       видимых лента останавливается ровно в трёх местах, поэтому точек
-       три. Лишние точки, ведущие в ту же позицию, — обман. На узком
-       экране видно меньше карточек, значит и остановок больше. */
-    var visible = function () {
-      var s = stepW();
-      return s ? Math.max(1, Math.round(shots.clientWidth / s)) : 1;
-    };
-    var stops = function () { return Math.max(1, cards.length - visible() + 1); };
-    var stopLeft = function (i) { return Math.min(i * stepW(), maxScroll()); };
-
-    var setActive = function (n) {
-      [].forEach.call(shotDots.children, function (d, i) {
-        var on = i === n;
-        d.classList.toggle('on', on);
-        d.setAttribute('aria-selected', on ? 'true' : 'false');
-      });
-    };
-
-    var builtFor = -1;
-    var buildDots = function () {
-      var n = stops();
-      if (n === builtFor) return;
-      builtFor = n;
-      shotDots.textContent = '';
-      for (var i = 0; i < n; i++) {
-        (function (idx) {
-          var b = document.createElement('button');
-          b.type = 'button';
-          b.setAttribute('role', 'tab');
-          b.setAttribute('aria-label', 'Положение ' + (idx + 1) + ' из ' + n);
-          b.addEventListener('click', function () {
-            shots.scrollTo({ left: stopLeft(idx), behavior: 'smooth' });
-            setActive(idx);
-          });
-          shotDots.appendChild(b);
-        })(i);
+    var updateArrows = function () {
+      var max = Math.max(0, maxScroll());
+      var canScroll = max > 2;
+      if (prev) {
+        prev.hidden = !canScroll;
+        prev.disabled = shots.scrollLeft <= 2;
       }
-      shotDots.hidden = n < 2;   // всё влезло — листать нечего
+      if (next) {
+        next.hidden = !canScroll;
+        next.disabled = shots.scrollLeft >= max - 2;
+      }
+    };
+    var move = function (direction) {
+      var step = stepW();
+      if (!step) return;
+      var index = Math.round(shots.scrollLeft / step) + direction;
+      shots.scrollTo({ left: Math.max(0, Math.min(index * step, maxScroll())), behavior: 'smooth' });
+    };
+    if (prev) prev.addEventListener('click', function () { move(-1); });
+    if (next) next.addEventListener('click', function () { move(1); });
+
+    var arrowFrame = 0;
+    shots.addEventListener('scroll', function () {
+      if (arrowFrame) return;
+      arrowFrame = requestAnimationFrame(function () { arrowFrame = 0; updateArrows(); });
+    }, { passive: true });
+    window.addEventListener('resize', updateArrows);
+    updateArrows();
+
+    var viewer = document.getElementById('shotViewer');
+    var viewerImg = document.getElementById('shotViewerImg');
+    var viewerCaption = document.getElementById('shotViewerCaption');
+    var viewerPrev = document.getElementById('shotViewerPrev');
+    var viewerNext = document.getElementById('shotViewerNext');
+    var viewerClose = viewer && viewer.querySelector('.shotviewer__close');
+    var activeShot = 0;
+    var returnFocus = null;
+
+    var drawViewer = function () {
+      if (!viewerImg || !viewerCaption || !cards[activeShot]) return;
+      var source = cards[activeShot].querySelector('img');
+      if (!source) return;
+      viewerImg.src = source.currentSrc || source.src;
+      viewerImg.alt = source.alt;
+      viewerCaption.textContent = source.alt;
+      if (viewerPrev) viewerPrev.disabled = activeShot === 0;
+      if (viewerNext) viewerNext.disabled = activeShot === cards.length - 1;
+    };
+    var openViewer = function (index, opener) {
+      if (!viewer) return;
+      activeShot = Math.max(0, Math.min(index, cards.length - 1));
+      returnFocus = opener || null;
+      drawViewer();
+      viewer.hidden = false;
+      document.body.classList.add('shotview-open');
+      if (viewerClose) viewerClose.focus();
+    };
+    var closeViewer = function () {
+      if (!viewer || viewer.hidden) return;
+      viewer.hidden = true;
+      document.body.classList.remove('shotview-open');
+      viewerImg.removeAttribute('src');
+      if (returnFocus) returnFocus.focus();
+      returnFocus = null;
+    };
+    var stepViewer = function (direction) {
+      activeShot = Math.max(0, Math.min(activeShot + direction, cards.length - 1));
+      drawViewer();
     };
 
-    /* Туман по краям живёт только во время движения и нарастает плавно.
-       Класс держим ещё треть секунды после последнего события прокрутки,
-       чтобы он не начал гаснуть, пока лента доезжает по инерции. */
-    var idleTimer;
-    var onScroll = function () {
-      buildDots();
-      var s = stepW();
-      if (s) setActive(Math.min(Math.round(shots.scrollLeft / s), stops() - 1));
-
-      var max = maxScroll();
-      shots.classList.add('moving');
-      shots.classList.toggle('fade-l', shots.scrollLeft > 2);
-      shots.classList.toggle('fade-r', shots.scrollLeft < max - 2);
-
-      clearTimeout(idleTimer);
-      idleTimer = setTimeout(function () {
-        shots.classList.remove('moving');   /* ширина уезжает в ноль за 0.52 с */
-      }, 320);
-    };
-
-    shots.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    buildDots();
-    setActive(0);
+    cards.forEach(function (card, index) {
+      var opener = card.querySelector('[data-shot-open]');
+      if (opener) opener.addEventListener('click', function () { openViewer(index, opener); });
+    });
+    if (viewer) {
+      viewer.querySelectorAll('[data-shot-close]').forEach(function (button) {
+        button.addEventListener('click', closeViewer);
+      });
+      if (viewerPrev) viewerPrev.addEventListener('click', function () { stepViewer(-1); });
+      if (viewerNext) viewerNext.addEventListener('click', function () { stepViewer(1); });
+      document.addEventListener('keydown', function (event) {
+        if (viewer.hidden) return;
+        if (event.key === 'Escape') closeViewer();
+        if (event.key === 'ArrowLeft') stepViewer(-1);
+        if (event.key === 'ArrowRight') stepViewer(1);
+      });
+    }
   }
 
   document.querySelectorAll('[data-year]').forEach(function (el) {
